@@ -1,0 +1,24 @@
+{
+  "name": "trc-react",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -p src"
+  },
+  "files": [ "dist"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/react": "^16.8.14",
+    "@types/react-dom": "^16.8.4",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "trc-analyze": "^1.6.0",
+    "trc-sheet": "^1.9.0"
+  },
+  "devDependencies": {
+    "typescript": "^3.4.5"
+  }
+}
