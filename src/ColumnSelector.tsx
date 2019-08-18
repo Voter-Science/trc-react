@@ -9,24 +9,28 @@ declare var _trcGlobal : IMajorState;
 // Select a column name from the sheet. 
 export interface IColumnSelectorProps {
     // Optional predicate to restrict which columns are included
-    Include? : (ci : trcSheet.IColumnInfo) => boolean; 
+    Include? : (ci : trcSheet.IColumnInfo) => boolean;  // if missing, defaults to IncludeAll
     Value? : string | trcSheet.IColumnInfo; // Initial value 
 
     OnChange : (ci : trcSheet.IColumnInfo) => void; // Called when a selection is made
 }
 export class ColumnSelector extends React.Component<IColumnSelectorProps, {}> {
     constructor(props : any) {
-        if (!props.Include ) {
-            props.Include= (ci : any) => true;
-        }
         super(props);
         this.state = { };    
         this.handleChange = this.handleChange.bind(this);
       }
 
+      private include(ci : trcSheet.IColumnInfo) : boolean {
+          if (this.props.Include) {
+              return this.props.Include(ci);
+          }
+          return true;
+      }
+
     private getValues() : string[] {
         var cs = _trcGlobal._info.Columns;
-        return cs.map(c => this.props.Include(c) ? c.Name : null);
+        return cs.map(c => this.include(c) ? c.Name : null);
     }
 
     

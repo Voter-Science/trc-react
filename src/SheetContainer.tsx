@@ -13,6 +13,7 @@ import * as common from 'trc-httpshim/common'
 import * as core from 'trc-core/core'
 import * as trcSheet from 'trc-sheet/sheet'
 import * as sheetContents from 'trc-sheet/sheetContents'
+import { Spinning } from "./Spinning";
 
 // https://www.leighhalliday.com/introducing-react-context-api
 // const AppContext = React.createContext( {});
@@ -30,7 +31,14 @@ export interface IMajorProps {
     
     // fetchRebase, fetchHistory, etc 
     // requireTopLevel, requireColumn
+    // Don't use 'children' since that's always evaluated. Instead, call a function that will defer evaluate to JSX. 
     onReady : () => any; // render body when ready 
+}
+
+export interface ISheetOps 
+{
+    // Will set state to "Updating" and pause the UI. 
+    beginAdminOp(worker : (admin : trcSheet.SheetAdminClient) => Promise<void>): void;
 }
 
 // Cached state shared by all the components. 
@@ -44,10 +52,11 @@ export interface IMajorState {
     _info?: trcSheet.ISheetInfoResult;
     _contents? : sheetContents.ISheetContents
     _errorRender? : () => any;
+    SheetOps : ISheetOps; // So clients can call ops 
     // Sheet Contents?  Sheet History? 
 }
 
-export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
+export class SheetContainer extends React.Component<IMajorProps, IMajorState> implements ISheetOps {
 
     public constructor(props: any) {
         super(props);
@@ -80,16 +89,42 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
                 return this.state._errorRender();
             }
             if (this.state._updating) {
-                return <div>Updating... please wait ...</div> 
+                return <div>Updating... please wait ...
+                    <Spinning></Spinning>
+                </div> 
             }
             if (!this.state._info) {
-                return <div>Major! Not yet loaded: {this.state.SheetId}</div>;
+                return <div>Major! Not yet loaded: {this.state.SheetId}
+                    <Spinning></Spinning>
+                </div>;
             } else {
                 // return <div>Major: {this.state._info.Name}</div>
                 //return this.props.children;
                 return this.props.onReady();
             }
         }
+    }
+
+
+    // Prefered helper for making admin operations. 
+    // This will pause the UI, issue the command, handle failures, and refresh. 
+    public beginAdminOp(worker : (admin : trcSheet.SheetAdminClient) => Promise<void>): void {
+        // Pause the UI. 
+        this.beginLoad();
+
+        var admin = new trcSheet.SheetAdminClient(this.state.SheetClient);
+        worker(admin).then( ()=> {
+            return this.checkManagedmentOp();
+        }).catch( (err)=> {
+            // Error? 
+            alert (JSON.stringify(err));
+
+            // Resume UI. 
+            this.setState({
+                _updating : false
+            });
+        });
+
     }
 
     // Signal control will begin loading. 
@@ -105,7 +140,9 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
         var adminClient = new trcSheet.SheetAdminClient(_trcGlobal.SheetClient);
         adminClient.WaitAsync().then( ()=> {
             // Management Operation could have changed everything. 
-            // Reload to trigger rebuilding all teh caches. 
+            // Reload to trigger rebuilding all the caches.  
+            // (todo - we could accept a callback if the client really wants to handle this themselves)
+            alert('Operation was successful!');
             location.reload(); 
 
             this.setState({
@@ -132,7 +169,8 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> {
         }, () => {     
             _trcGlobal = { 
                 SheetId : sheetRef.SheetId, 
-                 SheetClient : sheetClient
+                 SheetClient : sheetClient,
+                 SheetOps : this
             };
 
             // Possible things to get:
