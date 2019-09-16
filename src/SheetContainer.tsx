@@ -107,7 +107,8 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> im
 
 
     // Prefered helper for making admin operations. 
-    // This will pause the UI, issue the command, handle failures, and refresh. 
+    // This will pause the UI , issue the command, handle failures, and refresh. 
+    // It returns immediately  and lets the command run in the  background. 
     public beginAdminOp(worker : (admin : trcSheet.SheetAdminClient) => Promise<void>): void {
         // Pause the UI. 
         this.beginLoad();

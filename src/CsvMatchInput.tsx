@@ -12,6 +12,9 @@ declare var _trcGlobal: IMajorState;
 
 // take in a CSV, and match it to the current sheet. 
 export class CsvMatchInput extends React.Component<{
+    // If supplied, do this action when we submit. 
+    // If missing, default action is to post 
+    onSubmit?: (data: ISheetContents) => Promise<void>
 }, {
     // Stage 0: inputing raw text 
     rawText: string;
@@ -26,7 +29,7 @@ export class CsvMatchInput extends React.Component<{
 
     // Stage 3: after successfully posted. Done. 
     posted?: string; // after confirmation
-    postedVerNumber? : string; // after confirmation    
+    postedVerNumber?: string; // after confirmation    
 }>
 {
     constructor(props: any) {
@@ -47,13 +50,23 @@ export class CsvMatchInput extends React.Component<{
         });
 
 
-        _trcGlobal.SheetClient.postUpdateAsync(data).then((x) => {
-            var msg = "Successfully posted to server. UpdateNumber starts at " + x.VersionTag;
-            this.setState({
-                postedVerNumber : x.VersionTag,
-                posted: msg
-            });
-        })
+        if (this.props.onSubmit) {
+            this.props.onSubmit(data).then((x) => {
+                var msg = "Success.";
+                this.setState({
+                    posted: msg
+                });
+            })
+        }
+        else {
+            _trcGlobal.SheetClient.postUpdateAsync(data).then((x) => {
+                var msg = "Successfully posted to server. UpdateNumber starts at " + x.VersionTag;
+                this.setState({
+                    postedVerNumber: x.VersionTag,
+                    posted: msg
+                });
+            })
+        }
     }
     private onValidate(data: ISheetContents) {
         var cis = _trcGlobal._info.Columns;
@@ -68,14 +81,14 @@ export class CsvMatchInput extends React.Component<{
             // $$$ Normalize casing to Possible Values? 
             // All values in the column should match a possible value. 
             if (x.PossibleValues && x.PossibleValues.length > 0) {
-                var possible : any = { };
+                var possible: any = {};
                 x.PossibleValues.forEach(val => possible[val] = true);
                 possible[""] = true;
                 possible["---"] = true; // sentinel value for delete.
 
 
                 var input: string[] = data[colName];
-                input.forEach((val,iRow) => {
+                input.forEach((val, iRow) => {
                     if (!possible[val]) {
                         throw "Column '" + colName + "' has illegal value '" + val + "' at row " + iRow + ".";
                     }
@@ -132,9 +145,15 @@ export class CsvMatchInput extends React.Component<{
 
     public render() {
         if (this.state.posted) {
-            return <div>{this.state.posted}
-            <PluginLink id="Audit" url={"#show=delta;ver=" + this.state.postedVerNumber}></PluginLink>
-            </div>
+            if (this.state.postedVerNumber) {
+                return <div>{this.state.posted}
+                    <PluginLink id="Audit" url={"#show=delta;ver=" + this.state.postedVerNumber}></PluginLink>
+                </div>
+            }
+            else {
+                return <div>{this.state.posted}
+                </div>
+            }
         }
         if (this.state.posting) {
             return <div>Posting data to server...</div>
