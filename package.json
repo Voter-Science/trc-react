@@ -7,18 +7,20 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc -p src"
   },
-  "files": [ "dist"],
+  "files": [
+    "dist"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/react": "^16.8.14",
-    "@types/react-dom": "^16.8.4",
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
+    "@types/react": "^16.9.35",
+    "@types/react-dom": "^16.9.8",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
     "trc-analyze": "^1.6.0",
     "trc-sheet": "^1.9.0"
   },
   "devDependencies": {
-    "typescript": "^3.4.5"
+    "typescript": "^3.9.3"
   }
 }
