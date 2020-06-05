@@ -3,11 +3,17 @@ import * as ReactDOM from "react-dom";
 import * as trcSheet from 'trc-sheet/sheet'
 import { IMajorState } from "./SheetContainer";
 
+import { Button } from "./Button";
+import { Grid } from "./Grid";
+import { HorizontalList } from "./HorizontalList";
+import { SelectInput } from "./SelectInput";
+import { TextInput } from "./TextInput";
+
 declare var _trcGlobal: IMajorState;
 
-// Render multiple questions with a "submit" button. 
-// Still assumed to be for a single RecId. 
-// record is a map of QuestionName=Value 
+// Render multiple questions with a "submit" button.
+// Still assumed to be for a single RecId.
+// record is a map of QuestionName=Value
 export class AllQuestions extends React.Component<{
     columns: trcSheet.IColumnInfo[],
     onSubmit : (record : any) => void
@@ -39,20 +45,31 @@ export class AllQuestions extends React.Component<{
     }
 
     public render() {
-        return <div>
-            {this.props.columns.map((attr, idx) => !attr.IsReadOnly && <QuestionSelect
+        const inputs = this.props.columns.map((attr, idx) => !attr.IsReadOnly && (
+            <QuestionSelect
                 key={idx}
                 onChange={(val: string) => this.onChange(idx, val)}
-                columnInfo={attr}>
-            </QuestionSelect>)}
+                columnInfo={attr}
+            />
+        )).filter(Boolean);
 
-            <button onClick={this.onSubmit}>Submit</button>
-        </div>
+        return (
+            <>
+                <Grid>
+                    {inputs}
+                </Grid>
+                <HorizontalList alignRight>
+                    <Button onClick={this.onSubmit}>
+                        Submit
+                    </Button>
+                </HorizontalList>
+            </>
+        )
     }
 }
 
-// $$$ Initial values? 
-// Render a single question. 
+// $$$ Initial values?
+// Render a single question.
 export interface IQuestionSelectProps {
     columnInfo: trcSheet.IColumnInfo;
     onChange: (val: string) => void;
@@ -69,25 +86,29 @@ export class QuestionSelect extends React.Component<IQuestionSelectProps, {}> {
 
     public render() {
         var ci = this.props.columnInfo;
+
         if (ci.IsReadOnly) {
             return <div>{ci.Name}</div>
         }
+
         if (!ci.PossibleValues) {
-            // Text box 
-            return <div>{ci.Name}
-                <input type="text" onChange={(e) => this.c1(e.target.value)}></input>
-            </div>
-        } else {
-            // Selection 
-            return <div>{ci.Name}
-                <select onChange={(e) => this.c1(e.target.value)}>
-                    <option key={-1}></option>
-                    {ci.PossibleValues.map((val, idx) =>
-                        <option key={idx}>
-                            {val}
-                        </option>)}
-                </select>
-            </div>
+            // Text box
+            return (
+                <TextInput
+                    label={ci.Name}
+                    type="text"
+                    onChange={(e) => this.c1(e.target.value)}
+                />
+            )
         }
+
+        // Selection
+        return (
+            <SelectInput
+                label={ci.Name}
+                options={ci.PossibleValues}
+                onChange={(e) => this.c1(e.target.value)}
+            />
+        )
     }
 }
