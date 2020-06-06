@@ -13,7 +13,7 @@ import * as common from 'trc-httpshim/common'
 import * as core from 'trc-core/core'
 import * as trcSheet from 'trc-sheet/sheet'
 import * as sheetContents from 'trc-sheet/sheetContents'
-import { Spinning } from "./Spinning";
+import { Spinning } from "./common/Spinning";
 
 // https://www.leighhalliday.com/introducing-react-context-api
 // const AppContext = React.createContext( {});
