@@ -3,11 +3,11 @@ import * as ReactDOM from "react-dom";
 import * as trcSheet from 'trc-sheet/sheet'
 import { IMajorState } from "./SheetContainer";
 
-import { Button } from "./Button";
-import { Grid } from "./Grid";
-import { HorizontalList } from "./HorizontalList";
-import { SelectInput } from "./SelectInput";
-import { TextInput } from "./TextInput";
+import { Button } from "./common/Button";
+import { Grid } from "./common/Grid";
+import { HorizontalList } from "./common/HorizontalList";
+import { SelectInput } from "./common/SelectInput";
+import { TextInput } from "./common/TextInput";
 
 declare var _trcGlobal: IMajorState;
 
