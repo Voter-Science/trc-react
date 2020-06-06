@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 
-interface IProps {
+interface IProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   secondary?: boolean
 }
 
