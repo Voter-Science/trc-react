@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from '@emotion/styled';
 
-import { Copy } from './Copy';
+import { Copy } from './common/Copy';
 
 // PluginShell is the wrapper for the consuming plugin. It includes an header at
 // the top of the page, showing the plugin name and a short description with

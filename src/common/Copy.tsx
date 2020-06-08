@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { css } from '@emotion/core';
 import styled from '@emotion/styled';
 
 // Copy is a generic copy component responsible for styling text blocks such as
@@ -8,7 +9,12 @@ interface IProps {
   children: React.ReactNode;
 }
 
-const Container = styled.div`
+interface IContainer {
+  alignRight?: boolean;
+  bold?: boolean;
+}
+
+const Container = styled.div<IContainer>`
   font-size: 1rem;
   line-height: 1.4;
   *:first-child {
@@ -20,10 +26,20 @@ const Container = styled.div`
   a {
     color: inherit;
   }
+  ${props => props.alignRight && css`
+    &, * {
+      text-align: right;
+    }
+  `}
+  ${props => props.bold && css`
+    &, * {
+      font-weight: 600;
+    }
+  `}
 `;
 
-export const Copy = ({ children }: IProps) => (
-  <Container>
+export const Copy = ({ children, ...rest }: IProps & IContainer) => (
+  <Container {...rest}>
     {children}
   </Container>
 );
