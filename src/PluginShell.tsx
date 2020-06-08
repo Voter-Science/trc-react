@@ -15,6 +15,8 @@ interface IProps {
 
 const Header = styled.header`
   background: #eee;
+  background-image: url("https://trcanvasdata.blob.core.windows.net/publicimages/trc-plugin-banner-bgnd.jpg");
+  background-size: cover;
   padding: 3rem 2rem;
   text-align: center;
 `;
