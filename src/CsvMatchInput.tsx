@@ -1,37 +1,36 @@
 import * as React from "react";
 
-import * as trcSheet from 'trc-sheet/sheet'
-
 import { SheetContents, ISheetContents } from "trc-sheet/sheetContents";
-import { IMajorState } from "./SheetContainer";
+
+import TRCContext from "./context/TRCContext";
 
 import { CsvInput } from "./CsvInput";
 import { PluginLink } from "./PluginLink";
 
-declare var _trcGlobal: IMajorState;
-
-// take in a CSV, and match it to the current sheet. 
+// take in a CSV, and match it to the current sheet.
 export class CsvMatchInput extends React.Component<{
-    // If supplied, do this action when we submit. 
-    // If missing, default action is to post 
+    // If supplied, do this action when we submit.
+    // If missing, default action is to post
     onSubmit?: (data: ISheetContents) => Promise<void>
 }, {
-    // Stage 0: inputing raw text 
+    // Stage 0: inputing raw text
     rawText: string;
 
-    // Stage 1: after parsing & validation 
+    // Stage 1: after parsing & validation
     data: ISheetContents;
-    _recIdMatch?: number; // # of recIds that match. 
+    _recIdMatch?: number; // # of recIds that match.
     _recIdTotal?: number; // total # of recIds in the data
 
-    // Stage 2: after submit to posting 
-    posting?: boolean; // after submit, before confirmation 
+    // Stage 2: after submit to posting
+    posting?: boolean; // after submit, before confirmation
 
-    // Stage 3: after successfully posted. Done. 
+    // Stage 3: after successfully posted. Done.
     posted?: string; // after confirmation
-    postedVerNumber?: string; // after confirmation    
+    postedVerNumber?: string; // after confirmation
 }>
 {
+    static contextType = TRCContext;
+
     constructor(props: any) {
         super(props);
         this.state = {
@@ -44,7 +43,7 @@ export class CsvMatchInput extends React.Component<{
     }
 
     private onSubmit(data: ISheetContents) {
-        // Post ot sheet contents. 
+        // Post ot sheet contents.
         this.setState({
             posting: true
         });
@@ -59,7 +58,7 @@ export class CsvMatchInput extends React.Component<{
             })
         }
         else {
-            _trcGlobal.SheetClient.postUpdateAsync(data).then((x) => {
+            this.context.SheetClient.postUpdateAsync(data).then((x: any) => {
                 var msg = "Successfully posted to server. UpdateNumber starts at " + x.VersionTag;
                 this.setState({
                     postedVerNumber: x.VersionTag,
@@ -69,20 +68,20 @@ export class CsvMatchInput extends React.Component<{
         }
     }
     private onValidate(data: ISheetContents) {
-        var cis = _trcGlobal._info.Columns;
+        var cis = this.context._info.Columns;
 
-        // All rows in the sheet must match a column in 
+        // All rows in the sheet must match a column in
         for (var colName in data) {
-            var x = cis.find(ci => ci.Name == colName);
+            var x = cis.find((ci: any) => ci.Name == colName);
             if (!x) {
                 throw "Column '" + colName + "' is not part of this sheet.";
             }
 
-            // $$$ Normalize casing to Possible Values? 
-            // All values in the column should match a possible value. 
+            // $$$ Normalize casing to Possible Values?
+            // All values in the column should match a possible value.
             if (x.PossibleValues && x.PossibleValues.length > 0) {
                 var possible: any = {};
-                x.PossibleValues.forEach(val => possible[val] = true);
+                x.PossibleValues.forEach((val: any) => possible[val] = true);
                 possible[""] = true;
                 possible["---"] = true; // sentinel value for delete.
 
@@ -105,9 +104,9 @@ export class CsvMatchInput extends React.Component<{
         var total = recIds.length
         var match: number = -1;
 
-        // Get RecId match. (Only if contents are available)        
-        if (_trcGlobal._contents) {
-            var index = SheetContents.getSheetContentsIndex(_trcGlobal._contents);
+        // Get RecId match. (Only if contents are available)
+        if (this.context._contents) {
+            var index = SheetContents.getSheetContentsIndex(this.context._contents);
 
             match = 0;
 

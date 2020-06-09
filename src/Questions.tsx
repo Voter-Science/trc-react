@@ -9,8 +9,6 @@ import { HorizontalList } from "./common/HorizontalList";
 import { SelectInput } from "./common/SelectInput";
 import { TextInput } from "./common/TextInput";
 
-declare var _trcGlobal: IMajorState;
-
 // Render multiple questions with a "submit" button.
 // Still assumed to be for a single RecId.
 // record is a map of QuestionName=Value

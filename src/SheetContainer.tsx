@@ -13,14 +13,10 @@ import * as common from 'trc-httpshim/common'
 import * as core from 'trc-core/core'
 import * as trcSheet from 'trc-sheet/sheet'
 import * as sheetContents from 'trc-sheet/sheetContents'
+
+import TRCContext from "./context/TRCContext";
+
 import { Spinning } from "./common/Spinning";
-
-// https://www.leighhalliday.com/introducing-react-context-api
-// const AppContext = React.createContext( {});
-
-// Replace this with a react context?
-declare var _trcGlobal : IMajorState;
-
 
 export interface IMajorProps {
     // If set, then sheet must be a top-level to load
@@ -33,7 +29,6 @@ export interface IMajorProps {
     // requireTopLevel, requireColumn
     // Don't use 'children' since that's always evaluated. Instead, call a
     // function that will defer evaluate to JSX.
-    onReady : () => any; // render body when ready
 }
 
 export interface ISheetOps
@@ -58,7 +53,6 @@ export interface IMajorState {
 }
 
 export class SheetContainer extends React.Component<IMajorProps, IMajorState> implements ISheetOps {
-
     public constructor(props: any) {
         super(props);
 
@@ -99,9 +93,11 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> im
                     <Spinning />
                 </div>;
             } else {
-                // return <div>Major: {this.state._info.Name}</div>
-                //return this.props.children;
-                return this.props.onReady();
+                return (
+                    <TRCContext.Provider value={this.state}>
+                        {this.props.children}
+                    </TRCContext.Provider>
+                );
             }
         }
     }
@@ -139,7 +135,7 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> im
     }
 
     public checkManagedmentOp() : void {
-        var adminClient = new trcSheet.SheetAdminClient(_trcGlobal.SheetClient);
+        var adminClient = new trcSheet.SheetAdminClient(this.state.SheetClient);
         adminClient.WaitAsync().then( ()=> {
             // Management Operation could have changed everything.
             // Reload to trigger rebuilding all the caches.
@@ -169,10 +165,12 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> im
             SheetId: sheetRef.SheetId,
             SheetClient: sheetClient
         }, () => {
+            var _trcGlobal: IMajorState;
+
             _trcGlobal = {
                 SheetId : sheetRef.SheetId,
-                 SheetClient : sheetClient,
-                 SheetOps : this
+                SheetClient : sheetClient,
+                SheetOps : this
             };
 
             // Possible things to get:
@@ -187,7 +185,7 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> im
                 this.state.SheetClient.getSheetContentsAsync().then( (contents)=>
                 {
                     _trcGlobal._contents = contents;
-                    this.checkDone();
+                    this.checkDone(_trcGlobal);
                 })
             }
 
@@ -203,12 +201,12 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> im
                         });
                     }
                 }
-                this.checkDone();
+                this.checkDone(_trcGlobal);
             });
         });
     }
 
-    private checkDone() : void {
+    private checkDone(_trcGlobal: IMajorState) : void {
         if (!_trcGlobal) {
             return;
         }

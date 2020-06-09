@@ -1,20 +1,22 @@
 import * as React from "react";
 
-import { IMajorState } from "./SheetContainer";
+import TRCContext from "./context/TRCContext";
 
-declare var _trcGlobal: IMajorState;
+import { IMajorState } from "./SheetContainer";
 
 // Helper for creating hyperlink to another plugin (same sheet)
 export class PluginLink extends React.Component<{
-    id: string, // plugin id to display 
+    id: string, // plugin id to display
     sheetId?: string // pull from global if missing
     url?: string // query or hash
 }, {}>
 {
+    static contextType = TRCContext;
+
     private _url: string;
 
-    public constructor(props: any) {
-        super(props);
+    public constructor(props: any, context: IMajorState) {
+        super(props, context);
 
 
         // https://canvas.voter-science.com/plugin/47c41c7d5e2946bfb30d254f142d7000/audit
@@ -23,7 +25,7 @@ export class PluginLink extends React.Component<{
 
         var sheetId = this.props.sheetId;
         if (!sheetId) {
-            sheetId = _trcGlobal.SheetId;
+            sheetId = this.context.SheetId;
         }
 
         this._url = "https://canvas.voter-science.com/plugin/" +
