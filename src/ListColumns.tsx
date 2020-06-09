@@ -1,15 +1,15 @@
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 import * as trcSheet from 'trc-sheet/sheet'
-import { IMajorState } from "./SheetContainer";
 
-declare var _trcGlobal: IMajorState;
+import TRCContext from "./context/TRCContext";
 
-// List column names. 
+// List column names.
 export class ListColumns extends React.Component<{
     Include?: (ci: trcSheet.IColumnInfo) => boolean;
 }, {
 }> {
+    static contextType = TRCContext;
+
     constructor(props: any) {
         if (!props.Include) {
             props.Include = (ci: any) => true;
@@ -27,12 +27,12 @@ export class ListColumns extends React.Component<{
     }
 
     public render()  {
-        var cis = _trcGlobal._info.Columns;
+        var cis = this.context._info.Columns;
         return <div>
             <ul>
-                {cis.map( (ci, idx) => this.props.Include(ci) && <li key={idx}>
+                {cis.map( (ci: any, idx: any) => this.props.Include(ci) && <li key={idx}>
                     {this.getStr(ci)}
-                </li>)}                
+                </li>)}
             </ul>
         </div>
     }
