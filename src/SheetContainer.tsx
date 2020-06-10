@@ -218,9 +218,6 @@ export class SheetContainer extends React.Component<IMajorProps, IMajorState> im
         }
 
         // Done! Now update the state once with everything
-        this.setState({
-            _info: _trcGlobal._info,
-            _contents : _trcGlobal._contents
-        });
+        this.setState(_trcGlobal);
     }
 }
