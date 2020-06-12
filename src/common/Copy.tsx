@@ -26,6 +26,9 @@ const Container = styled.div<IContainer>`
   a {
     color: inherit;
   }
+  pre {
+    white-space: normal;
+  }
   ${props => props.alignRight && css`
     &, * {
       text-align: right;
