@@ -3,7 +3,7 @@ import * as ReactDOM from "react-dom";
 import * as trcSheet from 'trc-sheet/sheet'
 
 import TRCContext from "./context/TRCContext";
-
+import { SelectInput } from "./common/SelectInput";
 
 // Select a column name from the sheet.
 export interface IColumnSelectorProps {
@@ -71,13 +71,16 @@ export class ColumnSelector extends React.Component<IColumnSelectorProps, {}> {
 
     // Hints on <select>: https://reactjs.org/docs/forms.html#the-select-tag
     render() {
-        // <option> must have a 'key' property for React.
-         return <select onChange={this.handleChange} value={this.getValue()}>
-             {this.getValues().map((name,idx) =>
-             name ?
-             <option key={idx} value={idx}>{name}</option>
-             : null
-             )}
-         </select>
+        const values = this.getValues().map((_, i) => i);
+
+        return (
+            <SelectInput
+                label={'Select column'}
+                options={this.getValues()}
+                onChange={this.handleChange}
+                value={this.getValue()}
+                values={values}
+            />
+        );
     }
 }
