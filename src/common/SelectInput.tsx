@@ -7,7 +7,18 @@ interface IProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
   label?: string;
   options: any[];
+  values?: any[];
 }
+
+const Wrapper = styled.div`
+  margin: 1rem 0;
+  &:first-child {
+    margin-top: 0;
+  }
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
 
 const Error = styled.p`
   color: red;
@@ -33,8 +44,8 @@ const Select = styled.select`
   width: 100%;
 `;
 
-export const SelectInput = ({ error, label, options, ...rest }: IProps) => (
-  <div>
+export const SelectInput = ({ error, label, options, values, ...rest }: IProps) => (
+  <Wrapper>
     {label && (
       <Label>
         {label}:
@@ -43,7 +54,7 @@ export const SelectInput = ({ error, label, options, ...rest }: IProps) => (
     <Select {...rest}>
       <option />
       {options.map((option, i) => (
-        <option key={i}>
+        <option key={i} value={values ? values[i] : option}>
           {option}
         </option>
       ))}
@@ -53,5 +64,5 @@ export const SelectInput = ({ error, label, options, ...rest }: IProps) => (
         {error}
       </Error>
     )}
-  </div>
+  </Wrapper>
 );
