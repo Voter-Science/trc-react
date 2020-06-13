@@ -6,9 +6,10 @@
         "removeComments": true,
         "declaration": true, // emit .d.ts files
         "target": "es5", // es5 for browsers
+        "downlevelIteration": true,
         "outDir": "./../dist",
         "lib": [ "es2015", "dom", "scripthost" ]
     } ,
-        
-    "exclude": ["node_modules", "output"]  
+
+    "exclude": ["node_modules", "output"]
 }
