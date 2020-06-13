@@ -12,12 +12,18 @@ interface IListProps {
   alignRight?: boolean;
 }
 
-const List = styled.div<IListProps>`
+const List = styled.ul<IListProps>`
   display: flex;
   justify-content: ${props => props.alignRight ? 'flex-end' : 'flex-start'};
   list-style-type: none;
   margin: 1rem 0;
   padding: 0;
+  &:first-child {
+    margin-top: 0;
+  }
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const Item = styled.li`
