@@ -21,10 +21,7 @@ const Container = styled.div<IContainer>`
     margin-top: 0;
   }
   *:last-child {
-    margin-top: 0;
-  }
-  a {
-    color: inherit;
+    margin-bottom: 0;
   }
   pre {
     white-space: normal;
