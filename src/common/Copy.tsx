@@ -17,6 +17,7 @@ interface IContainer {
 const Container = styled.div<IContainer>`
   font-size: 1rem;
   line-height: 1.4;
+  margin: 1rem 0;
   *:first-child {
     margin-top: 0;
   }
