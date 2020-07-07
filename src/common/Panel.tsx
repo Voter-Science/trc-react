@@ -14,7 +14,6 @@ const Container = styled.div`
   padding: 2rem;
   margin: 2rem auto;
   max-width: 900px;
-  overflow: hidden;
   > *:first-child {
     margin-top: 0;
   }
