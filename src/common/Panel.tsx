@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 // Panel is a container for grouping related content.
 
 interface IProps {
-  children: JSX.Element[];
+  children: React.ReactNode | React.ReactNode[];
 }
 
 const Container = styled.div`
