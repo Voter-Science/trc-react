@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 
 interface IProps {
   children: React.ReactNode[];
+  initialTab?: string;
   tabNames: string[];
 }
 
@@ -51,8 +52,8 @@ const TabContent = styled.div`
   }
 `;
 
-export const TabsPanel = ({ children, tabNames }: IProps) => {
-  const [activeTab, setActiveTab] = React.useState(tabNames[0]);
+export const TabsPanel = ({ children, initialTab, tabNames }: IProps) => {
+  const [activeTab, setActiveTab] = React.useState(initialTab || tabNames[0]);
 
   return (
     <Container>
