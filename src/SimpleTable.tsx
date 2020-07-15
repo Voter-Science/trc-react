@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { css } from '@emotion/core';
-import styled from '@emotion/styled';
+import * as React from "react";
+import { css } from "@emotion/core";
+import styled from "@emotion/styled";
 
-import { SheetContents, ISheetContents } from 'trc-sheet/sheetContents';
+import { SheetContents, ISheetContents } from "trc-sheet/sheetContents";
 
-import { HorizontalList } from './common/HorizontalList';
-import { DownloadCsv } from './DownloadCsv';
+import { HorizontalList } from "./common/HorizontalList";
+import { DownloadCsv } from "./DownloadCsv";
 
 // Render <Table> around a basic ISheetContents.
 // Readonly.
@@ -14,6 +14,11 @@ interface IProps {
   data: ISheetContents;
   downloadIcon?: boolean;
   onRowClick?: (recId: string) => void;
+  selectedRows?: { [dynamic: string]: boolean };
+}
+
+interface TrProps {
+  highlight?: boolean;
 }
 
 const TableWrapper = styled.div`
@@ -28,17 +33,27 @@ const Table = styled.table`
   width: 100%;
 `;
 
-const Tr = styled.tr`
+const Tr = styled.tr<TrProps>`
   border: solid 1px #e9e9e9;
   border-left: none;
   border-right: none;
   cursor: pointer;
+  ${(props) =>
+    props.highlight &&
+    css`
+      background: #f0f0f0;
+    `}
   &:hover {
     background: #f8f8f8;
+    ${(props) =>
+      props.highlight &&
+      css`
+        background: #f0f0f0;
+      `}
   }
 `;
 
-const Th = styled.th<{ isSorter: boolean, sortingOrder: string }>`
+const Th = styled.th<{ isSorter: boolean; sortingOrder: string }>`
   background: #6485ff;
   color: #fff;
   cursor: pointer;
@@ -48,24 +63,28 @@ const Th = styled.th<{ isSorter: boolean, sortingOrder: string }>`
   vertical-align: middle;
   &:after {
     content: "▾";
-    ${props => props.sortingOrder === 'DSC' && css`
-      content: "▴";
-    `};
-    margin-left: .5rem;
+    ${(props) =>
+      props.sortingOrder === "DSC" &&
+      css`
+        content: "▴";
+      `};
+    margin-left: 0.5rem;
     visibility: hidden;
   }
   &:hover {
     background: #5c7df2;
     &:after {
-      opacity: ${props => props.isSorter ? 1 : .5};
+      opacity: ${(props) => (props.isSorter ? 1 : 0.5)};
       visibility: visible;
     }
   }
-  ${props => props.isSorter && css`
-    &:after {
-      visibility: visible;
-    }
-  `}
+  ${(props) =>
+    props.isSorter &&
+    css`
+      &:after {
+        visibility: visible;
+      }
+    `}
 `;
 
 const Td = styled.td`
@@ -74,13 +93,18 @@ const Td = styled.td`
   white-space: nowrap;
 `;
 
-export function SimpleTable({ data, downloadIcon, onRowClick }: IProps) {
-  const [sorter, setSorter] = React.useState(0)
-  const [sortingOrder, setSortingOrder] = React.useState('ASC')
+export function SimpleTable({
+  data,
+  downloadIcon,
+  onRowClick,
+  selectedRows,
+}: IProps) {
+  const [sorter, setSorter] = React.useState(0);
+  const [sortingOrder, setSortingOrder] = React.useState("ASC");
 
   function onHeaderClick(i: number) {
     if (sorter === i) {
-      const newSortingOrder = sortingOrder === 'ASC' ? 'DSC' : 'ASC';
+      const newSortingOrder = sortingOrder === "ASC" ? "DSC" : "ASC";
       setSortingOrder(newSortingOrder);
     } else {
       setSorter(i);
@@ -102,13 +126,17 @@ export function SimpleTable({ data, downloadIcon, onRowClick }: IProps) {
   //   ['Nickolas', 'Alphonse', 'M', '55044']
   // ]
   const normalizedData: any[][] = data[headers[0]].map((_, i) => {
-    return headers.map(header => data[header][i]);
+    return headers.map((header) => data[header][i]);
   });
 
   normalizedData.sort((a, b) => {
     return a[sorter] < b[sorter]
-      ? sortingOrder === 'ASC' ? -1 : 1
-      : sortingOrder === 'DSC' ? -1 : 1;
+      ? sortingOrder === "ASC"
+        ? -1
+        : 1
+      : sortingOrder === "DSC"
+      ? -1
+      : 1;
   });
 
   return (
@@ -129,17 +157,19 @@ export function SimpleTable({ data, downloadIcon, onRowClick }: IProps) {
               ))}
             </Tr>
           </thead>
-            <tbody>
-              {normalizedData.map((row, i) => (
-                <Tr key={`r${i}`} onClick={() => onRowClick(row[0])}>
-                  {row.map((field, j) => (
-                    <Td key={`${i}_${j}`}>
-                      {field}
-                    </Td>
-                  ))}
-                </Tr>
-              ))}
-            </tbody>
+          <tbody>
+            {normalizedData.map((row, i) => (
+              <Tr
+                key={`r${i}`}
+                onClick={() => onRowClick(row[0])}
+                highlight={selectedRows && selectedRows[row[0]]}
+              >
+                {row.map((field, j) => (
+                  <Td key={`${i}_${j}`}>{field}</Td>
+                ))}
+              </Tr>
+            ))}
+          </tbody>
         </Table>
       </TableWrapper>
       {downloadIcon && (
