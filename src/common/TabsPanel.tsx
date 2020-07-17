@@ -19,7 +19,6 @@ const Container = styled.div`
   border-radius: 4px;
   margin: 2rem auto;
   max-width: 900px;
-  overflow: hidden;
 `;
 
 const TabNames = styled.ul`
