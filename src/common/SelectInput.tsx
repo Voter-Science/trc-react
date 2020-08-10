@@ -7,6 +7,7 @@ import styled from "@emotion/styled";
 interface IProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
   label?: string;
+  noBlank?: boolean;
   options: any[];
   small?: boolean;
   values?: any[];
@@ -65,6 +66,7 @@ const Select = styled.select<ISizingProps>`
 export const SelectInput = ({
   error,
   label,
+  noBlank,
   options,
   small,
   values,
@@ -73,7 +75,7 @@ export const SelectInput = ({
   <Wrapper>
     {label && <Label small={small}>{label}:</Label>}
     <Select small={small} {...rest}>
-      <option />
+      {!noBlank && <option />}
       {options.map((option, i) => (
         <option key={i} value={values ? values[i] : option}>
           {option}
