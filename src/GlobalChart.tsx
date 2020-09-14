@@ -70,6 +70,33 @@ function randomColorGenerator(): string {
   return "#" + (Math.random().toString(16) + "0000000").slice(2, 8);
 }
 
+function getColors(values: string[]): string[] {
+  var colors: string[] = [];
+  for (var i = 0; i < values.length; i++) {
+    var x = values[i];
+    var color = "#BBBBBB";
+    if (x.length != 0) {
+      var c = x[0];
+      if (c == "1") {
+        color = "#FF0000";
+      } // GOP
+      else if (c == "2" || c == "R") {
+        color = "#880000";
+      } else if (c == "3") {
+        color = "#880088";
+      } // ind
+      else if (c == "4" || c == "D") {
+        color = "#000088";
+      } //
+      else if (c == "5") {
+        color = "#0000FF";
+      } // Dem
+    }
+    colors.push(color);
+  }
+  return colors;
+}
+
 export function GlobalChart({
   QueryResult,
   Text,
@@ -109,7 +136,11 @@ export function GlobalChart({
     const counts: number[] = [];
     let barChartData: any;
 
-    let backgroundColor: string[] = backgroundColorUpstream;
+    let backgroundColor: string[] =
+      backgroundColorUpstream ||
+      (groupBy.indexOf("Party") >= 0 &&
+        getColors(Object.keys(QueryResult[groupBy])));
+
     if (!backgroundColor) {
       backgroundColor = [];
       for (let i = 0; i < values.length; i++) {
