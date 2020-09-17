@@ -188,8 +188,14 @@ export function GlobalChart({
         .map((x, i) => {
           const entry = {
             label: x,
-            backgroundColor: randomColorGenerator(),
-            borderColor: randomColorGenerator(),
+            backgroundColor:
+              Object.keys(QueryResult).length > 2
+                ? randomColorGenerator()
+                : [...backgroundColor],
+            borderColor:
+              Object.keys(QueryResult).length > 2
+                ? randomColorGenerator()
+                : [...backgroundColor],
             data: QueryResult[x].map((y: any) => parseFloat(y)),
             fill: chartType !== "line",
           };
