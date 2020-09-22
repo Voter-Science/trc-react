@@ -139,7 +139,7 @@ export function GlobalChart({
     let backgroundColor: string[] =
       backgroundColorUpstream ||
       (groupBy.indexOf("Party") >= 0 &&
-        getColors(Object.keys(QueryResult[groupBy])));
+        getColors(QueryResult[groupBy]));
 
     if (!backgroundColor) {
       backgroundColor = [];
