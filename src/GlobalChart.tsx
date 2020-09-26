@@ -120,6 +120,8 @@ export function GlobalChart({
       return;
     }
 
+    const normalizedChartType = chartType === "barGrouped" ? "bar" : chartType;
+
     if (chartSorting === "asc") {
       sortFunc = ChartSorter.Ascending;
     } else if (chartSorting === "dsc") {
@@ -138,8 +140,7 @@ export function GlobalChart({
 
     let backgroundColor: string[] =
       backgroundColorUpstream ||
-      (groupBy.indexOf("Party") >= 0 &&
-        getColors(QueryResult[groupBy]));
+      (groupBy.indexOf("Party") >= 0 && getColors(QueryResult[groupBy]));
 
     if (!backgroundColor) {
       backgroundColor = [];
@@ -178,7 +179,7 @@ export function GlobalChart({
             borderColor: "black",
             borderWidth: 1,
             data: counts,
-            fill: chartType !== "line",
+            fill: normalizedChartType !== "line",
           },
         ],
       };
@@ -197,7 +198,7 @@ export function GlobalChart({
                 ? randomColorGenerator()
                 : [...backgroundColor],
             data: QueryResult[x].map((y: any) => parseFloat(y)),
-            fill: chartType !== "line",
+            fill: normalizedChartType !== "line",
           };
           return entry;
         });
@@ -214,19 +215,26 @@ export function GlobalChart({
 
     // @ts-ignore
     const _chart = new window.Chart(canvas, {
-      type: chartType,
+      type: normalizedChartType,
       data: barChartData,
       options: {
         scales: {
           yAxes: [
             {
-              stacked: chartType !== "line" && !QueryResult[""],
+              stacked:
+                chartType !== "barGrouped" &&
+                normalizedChartType !== "line" &&
+                !QueryResult[""],
               ticks: {
                 beginAtZero: true,
-                display: chartType === "bar" || chartType === "line",
+                display:
+                  normalizedChartType === "bar" ||
+                  normalizedChartType === "line",
               },
               scaleLabel: {
-                display: chartType === "bar" || chartType === "line",
+                display:
+                  normalizedChartType === "bar" ||
+                  normalizedChartType === "line",
                 labelString: aggregatorColumn[0]
                   ? `${aggregator[0]} with ${aggregatorColumn[0]}`
                   : "Count",
@@ -235,12 +243,19 @@ export function GlobalChart({
           ],
           xAxes: [
             {
-              stacked: chartType !== "line" && !QueryResult[""],
+              stacked:
+                chartType !== "barGrouped" &&
+                normalizedChartType !== "line" &&
+                !QueryResult[""],
               ticks: {
-                display: chartType === "bar" || chartType === "line",
+                display:
+                  normalizedChartType === "bar" ||
+                  normalizedChartType === "line",
               },
               scaleLabel: {
-                display: chartType === "bar" || chartType === "line",
+                display:
+                  normalizedChartType === "bar" ||
+                  normalizedChartType === "line",
                 labelString: groupBy,
               },
             },
