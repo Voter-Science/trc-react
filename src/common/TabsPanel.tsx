@@ -54,6 +54,10 @@ const TabContent = styled.div`
 export const TabsPanel = ({ children, initialTab, tabNames }: IProps) => {
   const [activeTab, setActiveTab] = React.useState(initialTab || tabNames[0]);
 
+  React.useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   return (
     <Container>
       <TabNames>
