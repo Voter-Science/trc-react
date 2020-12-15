@@ -7,6 +7,7 @@ interface IProps {
   children: React.ReactNode[];
   initialTab?: string;
   tabNames: string[];
+  onTabClick?(tab: string): void;
 }
 
 interface ITabNameProps {
@@ -51,7 +52,12 @@ const TabContent = styled.div`
   }
 `;
 
-export const TabsPanel = ({ children, initialTab, tabNames }: IProps) => {
+export const TabsPanel = ({
+  children,
+  initialTab,
+  onTabClick,
+  tabNames,
+}: IProps) => {
   const [activeTab, setActiveTab] = React.useState(initialTab || tabNames[0]);
 
   React.useEffect(() => {
@@ -65,7 +71,10 @@ export const TabsPanel = ({ children, initialTab, tabNames }: IProps) => {
           <TabName
             key={name}
             active={name === activeTab}
-            onClick={() => setActiveTab(name)}
+            onClick={() => {
+              setActiveTab(name);
+              if (onTabClick) onTabClick(name);
+            }}
           >
             {name}
           </TabName>
