@@ -1,11 +1,11 @@
-import * as React from 'react';
+import * as React from "react";
 
-import * as sheetContents from 'trc-sheet/sheetContents';
+import * as sheetContents from "trc-sheet/sheetContents";
 
-import { Button } from './common/Button';
-import { Grid } from './common/Grid';
-import { HorizontalList } from './common/HorizontalList';
-import { TextInput } from './common/TextInput';
+import { Button } from "./common/Button";
+import { Grid } from "./common/Grid";
+import { HorizontalList } from "./common/HorizontalList";
+import { TextInput } from "./common/TextInput";
 
 // Generic control for collecting some input fields.
 
@@ -13,6 +13,7 @@ interface IProps {
   data: sheetContents.ISheetContents; // data is used to generate autocomplete suggestions
   Names: string[]; // Can be custom names, and will be used to set labels and input names
   Keys: string[]; // Must conform to ISheetContents keys
+  initialValues?: { [dynamic: string]: string };
   onSubmit?: (record: any) => void;
   submitLabel?: string;
 }
@@ -28,12 +29,22 @@ export class FieldInputs extends React.Component<IProps, IState> {
     super(props);
 
     var vals: any = {};
-    props.Names.forEach((name: string) => { vals[name] = "" });
+    props.Names.forEach((name: string) => {
+      vals[name] = "";
+    });
+
+    if (props.initialValues) {
+      Object.keys(props.initialValues).forEach((key) => {
+        if (vals[key] === "") {
+          vals[key] = props.initialValues[key];
+        }
+      });
+    }
 
     this.state = {
       Vals: vals,
       activeInputKey: null,
-      dataListItems: []
+      dataListItems: [],
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -42,7 +53,9 @@ export class FieldInputs extends React.Component<IProps, IState> {
 
   handleClear() {
     var vals: any = {};
-    this.props.Names.forEach((name: string) => { vals[name] = "" });
+    this.props.Names.forEach((name: string) => {
+      vals[name] = "";
+    });
     this.setState({ Vals: vals });
   }
 
@@ -82,7 +95,7 @@ export class FieldInputs extends React.Component<IProps, IState> {
     this.setState({
       Vals: vals,
       activeInputKey: key,
-      dataListItems: filteredDataList
+      dataListItems: filteredDataList,
     });
   }
 
@@ -103,9 +116,7 @@ export class FieldInputs extends React.Component<IProps, IState> {
 
     return (
       <>
-        <Grid>
-          {inputs}
-        </Grid>
+        <Grid>{inputs}</Grid>
 
         {this.state.dataListItems.length > 0 && (
           <datalist id={`datalist-${this.state.activeInputKey}`}>
@@ -120,7 +131,7 @@ export class FieldInputs extends React.Component<IProps, IState> {
             Clear
           </Button>
           <Button onClick={this.handleSubmit}>
-            {this.props.submitLabel || 'Search'}
+            {this.props.submitLabel || "Search"}
           </Button>
         </HorizontalList>
       </>
