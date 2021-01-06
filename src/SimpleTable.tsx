@@ -15,6 +15,7 @@ interface IProps {
   downloadIcon?: boolean;
   onRowClick?: (recId: string) => void;
   selectedRows?: { [dynamic: string]: boolean };
+  defaultSortBy?: string;
 }
 
 interface TrProps {
@@ -98,8 +99,16 @@ export function SimpleTable({
   downloadIcon,
   onRowClick,
   selectedRows,
+  defaultSortBy,
 }: IProps) {
-  const [sorter, setSorter] = React.useState(0);
+  let defaultSortByIndex;
+  if (defaultSortBy) {
+    defaultSortByIndex = Object.keys(data).findIndex(
+      (x) => x === defaultSortBy
+    );
+  }
+
+  const [sorter, setSorter] = React.useState(defaultSortByIndex || 0);
   const [sortingOrder, setSortingOrder] = React.useState("ASC");
 
   function onHeaderClick(i: number) {
