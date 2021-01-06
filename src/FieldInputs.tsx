@@ -15,6 +15,8 @@ interface IProps {
   Keys: string[]; // Must conform to ISheetContents keys
   initialValues?: { [dynamic: string]: string };
   onSubmit?: (record: any) => void;
+  onClear?: () => void;
+  onChange?: (key: string, value: string) => void;
   submitLabel?: string;
 }
 
@@ -57,6 +59,10 @@ export class FieldInputs extends React.Component<IProps, IState> {
       vals[name] = "";
     });
     this.setState({ Vals: vals });
+
+    if (this.props.onClear) {
+      this.props.onClear();
+    }
   }
 
   handleSubmit(event: any) {
@@ -97,6 +103,10 @@ export class FieldInputs extends React.Component<IProps, IState> {
       activeInputKey: key,
       dataListItems: filteredDataList,
     });
+
+    if (this.props.onChange) {
+      this.props.onChange(name, val);
+    }
   }
 
   render() {
