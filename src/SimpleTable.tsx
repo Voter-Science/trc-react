@@ -105,8 +105,13 @@ export function SimpleTable({
   defaultSortBy,
   columnsOrdering,
 }: IProps) {
+  const originalData = JSON.parse(JSON.stringify(data));
+
   if (columnsOrdering) {
-    data = reorderISheetColumns(data, columnsOrdering);
+    data = reorderISheetColumns(
+      JSON.parse(JSON.stringify(data)),
+      columnsOrdering
+    );
   }
 
   let defaultSortByIndex;
@@ -178,7 +183,14 @@ export function SimpleTable({
             {normalizedData.map((row, i) => (
               <Tr
                 key={`r${i}`}
-                onClick={() => onRowClick(row[0])}
+                onClick={() => {
+                  const firstKey = Object.keys(originalData)[0];
+                  const dataKeys = Object.keys(data);
+                  const firstKeyIndex = dataKeys.findIndex(
+                    (x) => x === firstKey
+                  );
+                  onRowClick(row[firstKeyIndex]);
+                }}
                 highlight={selectedRows && selectedRows[row[0]]}
               >
                 {row.map((field, j) => (
