@@ -7,6 +7,8 @@ import { SheetContents, ISheetContents } from "trc-sheet/sheetContents";
 import { HorizontalList } from "./common/HorizontalList";
 import { DownloadCsv } from "./DownloadCsv";
 
+import reorderISheetColumns from "./utils/reorderISheetColumns";
+
 // Render <Table> around a basic ISheetContents.
 // Readonly.
 
@@ -16,6 +18,7 @@ interface IProps {
   onRowClick?: (recId: string) => void;
   selectedRows?: { [dynamic: string]: boolean };
   defaultSortBy?: string;
+  columnsOrdering?: string[];
 }
 
 interface TrProps {
@@ -100,7 +103,12 @@ export function SimpleTable({
   onRowClick,
   selectedRows,
   defaultSortBy,
+  columnsOrdering,
 }: IProps) {
+  if (columnsOrdering) {
+    data = reorderISheetColumns(data, columnsOrdering);
+  }
+
   let defaultSortByIndex;
   if (defaultSortBy) {
     defaultSortByIndex = Object.keys(data).findIndex(
