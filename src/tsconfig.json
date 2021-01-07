@@ -1,15 +1,15 @@
 {
-    "compilerOptions": {
-        "jsx": "react",
-        "module": "commonjs",
-        "noImplicitAny": true,
-        "removeComments": true,
-        "declaration": true, // emit .d.ts files
-        "target": "es5", // es5 for browsers
-        "downlevelIteration": true,
-        "outDir": "./../dist",
-        "lib": [ "es2015", "dom", "scripthost" ]
-    } ,
+  "compilerOptions": {
+    "jsx": "react",
+    "module": "commonjs",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "declaration": true, // emit .d.ts files
+    "target": "es5", // es5 for browsers
+    "downlevelIteration": true,
+    "outDir": "./../dist",
+    "lib": ["es2015", "dom", "scripthost", "es2017"]
+  },
 
-    "exclude": ["node_modules", "output"]
+  "exclude": ["node_modules", "output"]
 }
