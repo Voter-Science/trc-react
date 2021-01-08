@@ -66,6 +66,8 @@ export class FieldInputs extends React.Component<IProps, IState> {
   }
 
   handleSubmit(event: any) {
+    event.preventDefault();
+
     // Normalize data. Convert "" to undefined.
     var x: any = {};
     for (var key in this.state.Vals) {
@@ -80,8 +82,6 @@ export class FieldInputs extends React.Component<IProps, IState> {
     if (c) {
       c(x);
     }
-
-    event.preventDefault();
   }
 
   private updateFieldState(name: string, val: string, key: string): void {
@@ -125,7 +125,7 @@ export class FieldInputs extends React.Component<IProps, IState> {
     ));
 
     return (
-      <>
+      <form onSubmit={this.handleSubmit}>
         <Grid>{inputs}</Grid>
 
         {this.state.dataListItems.length > 0 && (
@@ -137,14 +137,12 @@ export class FieldInputs extends React.Component<IProps, IState> {
         )}
 
         <HorizontalList alignRight>
-          <Button onClick={this.handleClear} secondary>
+          <Button onClick={this.handleClear} secondary type="button">
             Clear
           </Button>
-          <Button onClick={this.handleSubmit}>
-            {this.props.submitLabel || "Search"}
-          </Button>
+          <Button type="submit">{this.props.submitLabel || "Search"}</Button>
         </HorizontalList>
-      </>
+      </form>
     );
   }
 }
