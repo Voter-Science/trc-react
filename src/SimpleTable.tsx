@@ -19,15 +19,73 @@ interface IProps {
   selectedRows?: { [dynamic: string]: boolean };
   defaultSortBy?: string;
   columnsOrdering?: string[];
+  hasFullScreen?: boolean;
+  hasColumnFiltering?: boolean;
+  hasGroupBy?: boolean;
 }
 
 interface TrProps {
   highlight?: boolean;
+  separator?: boolean;
 }
 
-const TableWrapper = styled.div`
-  overflow-x: auto;
+const FullScreenWrapper = styled.div<{ fullScreen: boolean }>`
   margin: 1rem 0;
+  ${(props) =>
+    props.fullScreen &&
+    css`
+      margin: 0;
+      background: #fff;
+      padding: 2rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+    `}
+`;
+
+const FullScreenActions = styled.div`
+  height: 30px;
+  text-align: right;
+`;
+
+const Action = styled.button`
+  font-size: 14px;
+  border: none;
+  background: none;
+  color: #6485ff;
+  font-weight: 600;
+  padding: 0;
+  margin-left: 2rem;
+  cursor: pointer;
+  &:focus,
+  &:active {
+    outline: none;
+  }
+`;
+
+const GroupBySelect = styled.select`
+  color: #6485ff;
+  font-size: 14px;
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  background: none;
+  cursor: pointer;
+  &:focus,
+  &:active {
+    outline: none;
+  }
+`;
+
+const TableWrapper = styled.div<{ fullScreen: boolean }>`
+  overflow: auto;
+  ${(props) =>
+    props.fullScreen &&
+    css`
+      height: calc(100% - 30px);
+    `}
 `;
 
 const Table = styled.table`
@@ -47,6 +105,13 @@ const Tr = styled.tr<TrProps>`
     css`
       background: #f0f0f0;
     `}
+  ${(props) =>
+    props.separator &&
+    css`
+      pointer-events: none;
+      background: #f2f2f2;
+      font-weight: 600;
+    `}
   &:hover {
     background: #f8f8f8;
     ${(props) =>
@@ -57,15 +122,20 @@ const Tr = styled.tr<TrProps>`
   }
 `;
 
-const Th = styled.th<{ isSorter: boolean; sortingOrder: string }>`
+const Th = styled.th<{
+  isSorter: boolean;
+  sortingOrder: string;
+  columnFiltering: boolean;
+}>`
   background: #6485ff;
   color: #fff;
   cursor: pointer;
   font-weight: 500;
-  padding: 1rem;
+  padding: 1rem 1rem 2rem 1rem;
+  position: relative;
   text-align: left;
   vertical-align: middle;
-  &:after {
+  > span:after {
     content: "▾";
     ${(props) =>
       props.sortingOrder === "DSC" &&
@@ -85,10 +155,36 @@ const Th = styled.th<{ isSorter: boolean; sortingOrder: string }>`
   ${(props) =>
     props.isSorter &&
     css`
-      &:after {
+      span:after {
         visibility: visible;
       }
     `}
+  ${(props) =>
+    !props.columnFiltering &&
+    css`
+      padding: 1rem;
+    `}
+  > input {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    background: transparent;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 5px;
+    width: calc(100% - 1.4rem);
+    border: none;
+    padding: 3px 0.3rem;
+    border-bottom: solid 1px #3655c4;
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+      font-style: italic;
+    }
+    &:focus,
+    &:active {
+      outline: none;
+    }
+  }
 `;
 
 const Td = styled.td`
@@ -104,7 +200,18 @@ export function SimpleTable({
   selectedRows,
   defaultSortBy,
   columnsOrdering,
+  hasFullScreen,
+  hasColumnFiltering,
+  hasGroupBy,
 }: IProps) {
+  let columns = Object.keys(data);
+  const colFilters: { [dynamic: string]: string } = {};
+  columns.forEach((col) => (colFilters[col] = ""));
+
+  const [fullScreen, setFullScreen] = React.useState(false);
+  const [columnFilters, setColumnFilters] = React.useState(colFilters);
+  const [groupBy, setGroupBy] = React.useState("");
+
   const originalData = JSON.parse(JSON.stringify(data));
 
   if (columnsOrdering) {
@@ -112,7 +219,29 @@ export function SimpleTable({
       JSON.parse(JSON.stringify(data)),
       columnsOrdering
     );
+    columns = Object.keys(data);
   }
+
+  // Filter by column filter
+  columns.forEach((col) => {
+    if (columnFilters[col]) {
+      const regex = new RegExp(columnFilters[col], "i");
+      const allIndexes: number[] = [];
+      data[col].forEach((entry, index) => {
+        if (regex.test(entry)) {
+          allIndexes.push(index);
+        }
+      });
+      const newData: { [dynamic: string]: any[] } = {};
+      columns.forEach((col) => {
+        newData[col] = [];
+        allIndexes.forEach((indx) => {
+          newData[col].push(data[col][indx]);
+        });
+      });
+      data = { ...newData };
+    }
+  });
 
   let defaultSortByIndex;
   if (defaultSortBy) {
@@ -125,6 +254,7 @@ export function SimpleTable({
   const [sortingOrder, setSortingOrder] = React.useState("ASC");
 
   function onHeaderClick(i: number) {
+    setGroupBy("");
     if (sorter === i) {
       const newSortingOrder = sortingOrder === "ASC" ? "DSC" : "ASC";
       setSortingOrder(newSortingOrder);
@@ -151,56 +281,143 @@ export function SimpleTable({
     return headers.map((header) => data[header][i]);
   });
 
-  normalizedData.sort((a, b) => {
-    return a[sorter] < b[sorter]
-      ? sortingOrder === "ASC"
+  // Sort data
+  const isSorterNumeric = !normalizedData
+    .filter((entry) => Boolean(entry[sorter]))
+    .some((entry) => isNaN(entry[sorter]));
+
+  if (isSorterNumeric) {
+    normalizedData.sort((a, b) => {
+      if (!a[sorter] || !b[sorter]) {
+        return -1;
+      }
+      return sortingOrder === "ASC"
+        ? a[sorter] - b[sorter]
+        : b[sorter] - a[sorter];
+    });
+  } else {
+    normalizedData.sort((a, b) => {
+      return a[sorter] < b[sorter]
+        ? sortingOrder === "ASC"
+          ? -1
+          : 1
+        : sortingOrder === "DSC"
         ? -1
-        : 1
-      : sortingOrder === "DSC"
-      ? -1
-      : 1;
-  });
+        : 1;
+    });
+  }
 
   return (
     <>
-      <TableWrapper>
-        <Table>
-          <thead>
-            <Tr>
-              {headers.map((header, i) => (
-                <Th
-                  key={header}
-                  isSorter={header === headers[sorter]}
-                  sortingOrder={sortingOrder}
-                  onClick={() => onHeaderClick(i)}
-                >
-                  {header}
-                </Th>
-              ))}
-            </Tr>
-          </thead>
-          <tbody>
-            {normalizedData.map((row, i) => (
-              <Tr
-                key={`r${i}`}
-                onClick={() => {
-                  const firstKey = Object.keys(originalData)[0];
-                  const dataKeys = Object.keys(data);
-                  const firstKeyIndex = dataKeys.findIndex(
-                    (x) => x === firstKey
-                  );
-                  onRowClick(row[firstKeyIndex]);
+      <FullScreenWrapper fullScreen={fullScreen}>
+        {hasFullScreen && (
+          <FullScreenActions>
+            {hasGroupBy && (
+              <GroupBySelect
+                value={groupBy}
+                onChange={(e) => {
+                  setGroupBy(e.target.value);
+                  setSorter(columns.findIndex((x) => x === e.target.value));
+                  setSortingOrder("ASC");
                 }}
-                highlight={selectedRows && selectedRows[row[0]]}
               >
-                {row.map((field, j) => (
-                  <Td key={`${i}_${j}`}>{field}</Td>
+                <option value="">Group by</option>
+                {columns.map((col) => (
+                  <option key={col} value={col}>
+                    {col}
+                  </option>
+                ))}
+              </GroupBySelect>
+            )}
+            {hasColumnFiltering && (
+              <Action
+                type="button"
+                onClick={() => {
+                  const columnFiltersCopy = { ...columnFilters };
+                  columns.forEach((col) => (columnFiltersCopy[col] = ""));
+                  setColumnFilters(columnFiltersCopy);
+                }}
+              >
+                Clear filters &#8861;
+              </Action>
+            )}
+            <Action type="button" onClick={() => setFullScreen(!fullScreen)}>
+              {fullScreen ? <>Collapse &#10066;</> : <>Full screen &#10063;</>}
+            </Action>
+          </FullScreenActions>
+        )}
+        <TableWrapper fullScreen={fullScreen}>
+          <Table>
+            <thead>
+              <Tr>
+                {headers.map((header, i) => (
+                  <Th
+                    key={header}
+                    isSorter={header === headers[sorter]}
+                    sortingOrder={sortingOrder}
+                    onClick={() => onHeaderClick(i)}
+                    columnFiltering={hasColumnFiltering}
+                  >
+                    <span>{header}</span>
+                    {hasColumnFiltering && (
+                      <input
+                        type="text"
+                        placeholder="Filter"
+                        onClick={(e) => e.stopPropagation()}
+                        value={columnFilters[header]}
+                        onChange={(e) => {
+                          const columnFiltersCopy = { ...columnFilters };
+                          columnFiltersCopy[header] = e.target.value;
+                          setColumnFilters(columnFiltersCopy);
+                        }}
+                      />
+                    )}
+                  </Th>
                 ))}
               </Tr>
-            ))}
-          </tbody>
-        </Table>
-      </TableWrapper>
+            </thead>
+            <tbody>
+              {normalizedData.slice(0, 500).map((row, i) => {
+                const groupByIndex = columns.findIndex((x) => x === groupBy);
+
+                return (
+                  <>
+                    {groupBy && i === 0 && (
+                      <Tr separator>
+                        <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
+                      </Tr>
+                    )}
+                    {groupBy &&
+                      i > 0 &&
+                      normalizedData[i - 1][groupByIndex] !==
+                        row[groupByIndex] && (
+                        <Tr separator>
+                          <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
+                        </Tr>
+                      )}
+                    <Tr
+                      key={`r${i}`}
+                      onClick={() => {
+                        const firstKey = Object.keys(originalData)[0];
+                        const dataKeys = Object.keys(data);
+                        const firstKeyIndex = dataKeys.findIndex(
+                          (x) => x === firstKey
+                        );
+                        onRowClick(row[firstKeyIndex]);
+                      }}
+                      highlight={selectedRows && selectedRows[row[0]]}
+                    >
+                      {row.map((field, j) => (
+                        <Td key={`${i}_${j}`}>{field}</Td>
+                      ))}
+                    </Tr>
+                  </>
+                );
+              })}
+            </tbody>
+          </Table>
+        </TableWrapper>
+      </FullScreenWrapper>
       {downloadIcon && (
         <HorizontalList alignRight>
           <DownloadCsv data={data} />
