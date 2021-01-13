@@ -21,10 +21,12 @@ interface IProps {
   columnsOrdering?: string[];
   hasFullScreen?: boolean;
   hasColumnFiltering?: boolean;
+  hasGroupBy?: boolean;
 }
 
 interface TrProps {
   highlight?: boolean;
+  separator?: boolean;
 }
 
 const FullScreenWrapper = styled.div<{ fullScreen: boolean }>`
@@ -63,6 +65,20 @@ const Action = styled.button`
   }
 `;
 
+const GroupBySelect = styled.select`
+  color: #6485ff;
+  font-size: 14px;
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  background: none;
+  cursor: pointer;
+  &:focus,
+  &:active {
+    outline: none;
+  }
+`;
+
 const TableWrapper = styled.div<{ fullScreen: boolean }>`
   overflow: auto;
   ${(props) =>
@@ -88,6 +104,13 @@ const Tr = styled.tr<TrProps>`
     props.highlight &&
     css`
       background: #f0f0f0;
+    `}
+  ${(props) =>
+    props.separator &&
+    css`
+      pointer-events: none;
+      background: #f2f2f2;
+      font-weight: 600;
     `}
   &:hover {
     background: #f8f8f8;
@@ -179,6 +202,7 @@ export function SimpleTable({
   columnsOrdering,
   hasFullScreen,
   hasColumnFiltering,
+  hasGroupBy,
 }: IProps) {
   let columns = Object.keys(data);
   const colFilters: { [dynamic: string]: string } = {};
@@ -186,6 +210,7 @@ export function SimpleTable({
 
   const [fullScreen, setFullScreen] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
+  const [groupBy, setGroupBy] = React.useState("");
 
   const originalData = JSON.parse(JSON.stringify(data));
 
@@ -229,6 +254,7 @@ export function SimpleTable({
   const [sortingOrder, setSortingOrder] = React.useState("ASC");
 
   function onHeaderClick(i: number) {
+    setGroupBy("");
     if (sorter === i) {
       const newSortingOrder = sortingOrder === "ASC" ? "DSC" : "ASC";
       setSortingOrder(newSortingOrder);
@@ -286,6 +312,23 @@ export function SimpleTable({
       <FullScreenWrapper fullScreen={fullScreen}>
         {hasFullScreen && (
           <FullScreenActions>
+            {hasGroupBy && (
+              <GroupBySelect
+                value={groupBy}
+                onChange={(e) => {
+                  setGroupBy(e.target.value);
+                  setSorter(columns.findIndex((x) => x === e.target.value));
+                  setSortingOrder("ASC");
+                }}
+              >
+                <option value="">Group by</option>
+                {columns.map((col) => (
+                  <option key={col} value={col}>
+                    {col}
+                  </option>
+                ))}
+              </GroupBySelect>
+            )}
             {hasColumnFiltering && (
               <Action
                 type="button"
@@ -334,24 +377,43 @@ export function SimpleTable({
               </Tr>
             </thead>
             <tbody>
-              {normalizedData.slice(0, 500).map((row, i) => (
-                <Tr
-                  key={`r${i}`}
-                  onClick={() => {
-                    const firstKey = Object.keys(originalData)[0];
-                    const dataKeys = Object.keys(data);
-                    const firstKeyIndex = dataKeys.findIndex(
-                      (x) => x === firstKey
-                    );
-                    onRowClick(row[firstKeyIndex]);
-                  }}
-                  highlight={selectedRows && selectedRows[row[0]]}
-                >
-                  {row.map((field, j) => (
-                    <Td key={`${i}_${j}`}>{field}</Td>
-                  ))}
-                </Tr>
-              ))}
+              {normalizedData.slice(0, 500).map((row, i) => {
+                const groupByIndex = columns.findIndex((x) => x === groupBy);
+
+                return (
+                  <>
+                    {groupBy && i === 0 && (
+                      <Tr separator>
+                        <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
+                      </Tr>
+                    )}
+                    {groupBy &&
+                      i > 0 &&
+                      normalizedData[i - 1][groupByIndex] !==
+                        row[groupByIndex] && (
+                        <Tr separator>
+                          <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
+                        </Tr>
+                      )}
+                    <Tr
+                      key={`r${i}`}
+                      onClick={() => {
+                        const firstKey = Object.keys(originalData)[0];
+                        const dataKeys = Object.keys(data);
+                        const firstKeyIndex = dataKeys.findIndex(
+                          (x) => x === firstKey
+                        );
+                        onRowClick(row[firstKeyIndex]);
+                      }}
+                      highlight={selectedRows && selectedRows[row[0]]}
+                    >
+                      {row.map((field, j) => (
+                        <Td key={`${i}_${j}`}>{field}</Td>
+                      ))}
+                    </Tr>
+                  </>
+                );
+              })}
             </tbody>
           </Table>
         </TableWrapper>
