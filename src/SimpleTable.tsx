@@ -151,15 +151,31 @@ export function SimpleTable({
     return headers.map((header) => data[header][i]);
   });
 
-  normalizedData.sort((a, b) => {
-    return a[sorter] < b[sorter]
-      ? sortingOrder === "ASC"
+  // Sort data
+  const isSorterNumeric = !normalizedData
+    .filter((entry) => Boolean(entry[sorter]))
+    .some((entry) => isNaN(entry[sorter]));
+
+  if (isSorterNumeric) {
+    normalizedData.sort((a, b) => {
+      if (!a[sorter] || !b[sorter]) {
+        return -1;
+      }
+      return sortingOrder === "ASC"
+        ? a[sorter] - b[sorter]
+        : b[sorter] - a[sorter];
+    });
+  } else {
+    normalizedData.sort((a, b) => {
+      return a[sorter] < b[sorter]
+        ? sortingOrder === "ASC"
+          ? -1
+          : 1
+        : sortingOrder === "DSC"
         ? -1
-        : 1
-      : sortingOrder === "DSC"
-      ? -1
-      : 1;
-  });
+        : 1;
+    });
+  }
 
   return (
     <>
