@@ -4,7 +4,9 @@ import styled from "@emotion/styled";
 
 import { SheetContents, ISheetContents } from "trc-sheet/sheetContents";
 
+import { Button } from "./common/Button";
 import { HorizontalList } from "./common/HorizontalList";
+import Modal from "./common/Modal";
 import { DownloadCsv } from "./DownloadCsv";
 
 import reorderISheetColumns from "./utils/reorderISheetColumns";
@@ -99,7 +101,6 @@ const Tr = styled.tr<TrProps>`
   border: solid 1px #e9e9e9;
   border-left: none;
   border-right: none;
-  cursor: pointer;
   ${(props) =>
     props.highlight &&
     css`
@@ -129,12 +130,12 @@ const Th = styled.th<{
 }>`
   background: #6485ff;
   color: #fff;
-  cursor: pointer;
   font-weight: 500;
   padding: 1rem 1rem 2rem 1rem;
   position: relative;
   text-align: left;
   vertical-align: middle;
+  min-width: 180px;
   > span:after {
     content: "▾";
     ${(props) =>
@@ -164,6 +165,9 @@ const Th = styled.th<{
     css`
       padding: 1rem;
     `}
+  > span {
+    cursor: pointer;
+  }
   > input {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.8);
@@ -174,11 +178,30 @@ const Th = styled.th<{
     bottom: 5px;
     width: calc(100% - 1.4rem);
     border: none;
-    padding: 3px 0.3rem;
+    padding: 3px 42px 3px 0.3rem;
     border-bottom: solid 1px #3655c4;
     &::placeholder {
       color: rgba(255, 255, 255, 0.4);
       font-style: italic;
+    }
+    &:focus,
+    &:active {
+      outline: none;
+    }
+  }
+  > button {
+    cursor: pointer;
+    position: absolute;
+    bottom: 10px;
+    right: 0.8rem;
+    background: #fff;
+    border: none;
+    padding: 1px 2px;
+    border-radius: 2px;
+    font-size: 10px;
+    opacity: 0.5;
+    &:hover {
+      opacity: 1;
     }
     &:focus,
     &:active {
@@ -191,6 +214,19 @@ const Td = styled.td`
   padding: 1rem;
   vertical-align: top;
   white-space: nowrap;
+`;
+
+const RowValueSelector = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  > li {
+    min-width: 300px;
+    margin: 3px 0;
+    > input {
+      margin-right: 5px;
+    }
+  }
 `;
 
 export function SimpleTable({
@@ -211,6 +247,8 @@ export function SimpleTable({
   const [fullScreen, setFullScreen] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
   const [groupBy, setGroupBy] = React.useState("");
+  const [selectedRowValues, setSelectedRowValues] = React.useState<any[]>(null);
+  const [selectedHeader, setSelectedHeader] = React.useState("");
 
   const originalData = JSON.parse(JSON.stringify(data));
 
@@ -225,17 +263,23 @@ export function SimpleTable({
   // Filter by column filter
   columns.forEach((col) => {
     if (columnFilters[col]) {
-      const regex = new RegExp(columnFilters[col], "i");
       const allIndexes: number[] = [];
       data[col].forEach((entry, index) => {
-        if (regex.test(entry)) {
-          allIndexes.push(index);
-        }
+        const filtersArr = columnFilters[col].split("|");
+        filtersArr.forEach((filter) => {
+          if (!filter) {
+            return;
+          }
+          const regex = new RegExp(filter.trim(), "i");
+          if (regex.test(entry)) {
+            allIndexes.push(index);
+          }
+        });
       });
       const newData: { [dynamic: string]: any[] } = {};
       columns.forEach((col) => {
         newData[col] = [];
-        allIndexes.forEach((indx) => {
+        [...new Set(allIndexes)].forEach((indx) => {
           newData[col].push(data[col][indx]);
         });
       });
@@ -309,6 +353,41 @@ export function SimpleTable({
 
   return (
     <>
+      {selectedRowValues && (
+        <Modal close={() => setSelectedRowValues(null)}>
+          <RowValueSelector id="rowsSelector">
+            {[...new Set(selectedRowValues)].filter(Boolean).map((rowValue) => (
+              <li key={rowValue}>
+                <input type="checkbox" value={rowValue} />
+                {rowValue}
+              </li>
+            ))}
+          </RowValueSelector>
+          <HorizontalList alignRight>
+            <Button
+              onClick={() => {
+                const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
+                  "#rowsSelector input"
+                );
+                let searchString = "";
+                rows.forEach((row) => {
+                  if (row.checked) {
+                    searchString = searchString
+                      ? `${searchString}|${row.value}`
+                      : row.value;
+                  }
+                });
+                const columnFiltersCopy = { ...columnFilters };
+                columnFiltersCopy[selectedHeader] = searchString;
+                setColumnFilters(columnFiltersCopy);
+                setSelectedRowValues(null);
+              }}
+            >
+              Apply
+            </Button>
+          </HorizontalList>
+        </Modal>
+      )}
       <FullScreenWrapper fullScreen={fullScreen}>
         {hasFullScreen && (
           <FullScreenActions>
@@ -355,22 +434,31 @@ export function SimpleTable({
                     key={header}
                     isSorter={header === headers[sorter]}
                     sortingOrder={sortingOrder}
-                    onClick={() => onHeaderClick(i)}
                     columnFiltering={hasColumnFiltering}
                   >
-                    <span>{header}</span>
+                    <span onClick={() => onHeaderClick(i)}>{header}</span>
                     {hasColumnFiltering && (
-                      <input
-                        type="text"
-                        placeholder="Filter"
-                        onClick={(e) => e.stopPropagation()}
-                        value={columnFilters[header]}
-                        onChange={(e) => {
-                          const columnFiltersCopy = { ...columnFilters };
-                          columnFiltersCopy[header] = e.target.value;
-                          setColumnFilters(columnFiltersCopy);
-                        }}
-                      />
+                      <>
+                        <input
+                          type="text"
+                          placeholder="Filter"
+                          value={columnFilters[header]}
+                          onChange={(e) => {
+                            const columnFiltersCopy = { ...columnFilters };
+                            columnFiltersCopy[header] = e.target.value;
+                            setColumnFilters(columnFiltersCopy);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedRowValues(data[header]);
+                            setSelectedHeader(header);
+                          }}
+                        >
+                          Values
+                        </button>
+                      </>
                     )}
                   </Th>
                 ))}
@@ -381,20 +469,20 @@ export function SimpleTable({
                 const groupByIndex = columns.findIndex((x) => x === groupBy);
 
                 return (
-                  <>
-                    {groupBy && i === 0 && (
+                  <React.Fragment key={i}>
+                    {groupBy && i === 0 ? (
                       <Tr separator>
                         <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
                       </Tr>
-                    )}
+                    ) : null}
                     {groupBy &&
-                      i > 0 &&
-                      normalizedData[i - 1][groupByIndex] !==
-                        row[groupByIndex] && (
-                        <Tr separator>
-                          <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
-                        </Tr>
-                      )}
+                    i > 0 &&
+                    normalizedData[i - 1][groupByIndex] !==
+                      row[groupByIndex] ? (
+                      <Tr separator>
+                        <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
+                      </Tr>
+                    ) : null}
                     <Tr
                       key={`r${i}`}
                       onClick={() => {
@@ -411,7 +499,7 @@ export function SimpleTable({
                         <Td key={`${i}_${j}`}>{field}</Td>
                       ))}
                     </Tr>
-                  </>
+                  </React.Fragment>
                 );
               })}
             </tbody>
