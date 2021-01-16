@@ -4,7 +4,9 @@ import styled from "@emotion/styled";
 
 import { SheetContents, ISheetContents } from "trc-sheet/sheetContents";
 
+import { Button } from "./common/Button";
 import { HorizontalList } from "./common/HorizontalList";
+import Modal from "./common/Modal";
 import { DownloadCsv } from "./DownloadCsv";
 
 import reorderISheetColumns from "./utils/reorderISheetColumns";
@@ -99,7 +101,6 @@ const Tr = styled.tr<TrProps>`
   border: solid 1px #e9e9e9;
   border-left: none;
   border-right: none;
-  cursor: pointer;
   ${(props) =>
     props.highlight &&
     css`
@@ -126,16 +127,17 @@ const Th = styled.th<{
   isSorter: boolean;
   sortingOrder: string;
   columnFiltering: boolean;
+  collapsed?: boolean;
 }>`
   background: #6485ff;
   color: #fff;
-  cursor: pointer;
   font-weight: 500;
   padding: 1rem 1rem 2rem 1rem;
   position: relative;
   text-align: left;
   vertical-align: middle;
-  > span:after {
+  min-width: 180px;
+  > span:first-child:after {
     content: "▾";
     ${(props) =>
       props.sortingOrder === "DSC" &&
@@ -155,7 +157,7 @@ const Th = styled.th<{
   ${(props) =>
     props.isSorter &&
     css`
-      span:after {
+      span:first-child:after {
         visibility: visible;
       }
     `}
@@ -164,6 +166,9 @@ const Th = styled.th<{
     css`
       padding: 1rem;
     `}
+  > span {
+    cursor: pointer;
+  }
   > input {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.8);
@@ -174,7 +179,7 @@ const Th = styled.th<{
     bottom: 5px;
     width: calc(100% - 1.4rem);
     border: none;
-    padding: 3px 0.3rem;
+    padding: 3px 21px 3px 0.3rem;
     border-bottom: solid 1px #3655c4;
     &::placeholder {
       color: rgba(255, 255, 255, 0.4);
@@ -185,12 +190,60 @@ const Th = styled.th<{
       outline: none;
     }
   }
+  > button {
+    cursor: pointer;
+    position: absolute;
+    bottom: 10px;
+    right: 0.8rem;
+    background: #fff;
+    border: none;
+    padding: 1px 2px;
+    border-radius: 2px;
+    font-size: 10px;
+    opacity: 0.5;
+    &:hover {
+      opacity: 1;
+    }
+    &:focus,
+    &:active {
+      outline: none;
+    }
+  }
+  ${(props) =>
+    props.collapsed &&
+    css`
+      max-width: 80px;
+      min-width: 80px;
+      width: 80px;
+      text-overflow: ellipsis;
+    `}
 `;
 
-const Td = styled.td`
+const Td = styled.td<{ collapsed?: boolean }>`
   padding: 1rem;
   vertical-align: top;
   white-space: nowrap;
+  ${(props) =>
+    props.collapsed &&
+    css`
+      max-width: 80px;
+      width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `}
+`;
+
+const RowValueSelector = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  > li {
+    min-width: 300px;
+    margin: 3px 0;
+    > input {
+      margin-right: 5px;
+    }
+  }
 `;
 
 export function SimpleTable({
@@ -200,17 +253,22 @@ export function SimpleTable({
   selectedRows,
   defaultSortBy,
   columnsOrdering,
-  hasFullScreen,
-  hasColumnFiltering,
-  hasGroupBy,
+  hasFullScreen = true,
+  hasColumnFiltering = true,
+  hasGroupBy = true,
 }: IProps) {
   let columns = Object.keys(data);
   const colFilters: { [dynamic: string]: string } = {};
   columns.forEach((col) => (colFilters[col] = ""));
+  const colExpanded: { [dynamic: string]: boolean } = {};
+  columns.forEach((col) => (colExpanded[col] = false));
 
   const [fullScreen, setFullScreen] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
+  const [collapsedColumns, setCollapsedColumns] = React.useState(colExpanded);
   const [groupBy, setGroupBy] = React.useState("");
+  const [selectedRowValues, setSelectedRowValues] = React.useState<any[]>(null);
+  const [selectedHeader, setSelectedHeader] = React.useState("");
 
   const originalData = JSON.parse(JSON.stringify(data));
 
@@ -225,17 +283,23 @@ export function SimpleTable({
   // Filter by column filter
   columns.forEach((col) => {
     if (columnFilters[col]) {
-      const regex = new RegExp(columnFilters[col], "i");
       const allIndexes: number[] = [];
       data[col].forEach((entry, index) => {
-        if (regex.test(entry)) {
-          allIndexes.push(index);
-        }
+        const filtersArr = columnFilters[col].split("|");
+        filtersArr.forEach((filter) => {
+          if (!filter) {
+            return;
+          }
+          const regex = new RegExp(filter.trim(), "i");
+          if (regex.test(entry)) {
+            allIndexes.push(index);
+          }
+        });
       });
       const newData: { [dynamic: string]: any[] } = {};
       columns.forEach((col) => {
         newData[col] = [];
-        allIndexes.forEach((indx) => {
+        [...new Set(allIndexes)].forEach((indx) => {
           newData[col].push(data[col][indx]);
         });
       });
@@ -282,9 +346,13 @@ export function SimpleTable({
   });
 
   // Sort data
+  function toNumber(val: string): number {
+    return parseFloat(val);
+  }
+
   const isSorterNumeric = !normalizedData
     .filter((entry) => Boolean(entry[sorter]))
-    .some((entry) => isNaN(entry[sorter]));
+    .some((entry) => isNaN(toNumber(entry[sorter])));
 
   if (isSorterNumeric) {
     normalizedData.sort((a, b) => {
@@ -292,8 +360,8 @@ export function SimpleTable({
         return -1;
       }
       return sortingOrder === "ASC"
-        ? a[sorter] - b[sorter]
-        : b[sorter] - a[sorter];
+        ? toNumber(a[sorter]) - toNumber(b[sorter])
+        : toNumber(b[sorter]) - toNumber(a[sorter]);
     });
   } else {
     normalizedData.sort((a, b) => {
@@ -307,8 +375,45 @@ export function SimpleTable({
     });
   }
 
+  const areFiltersSet = columns.some((col) => columnFilters[col] !== "");
+
   return (
     <>
+      {selectedRowValues && (
+        <Modal close={() => setSelectedRowValues(null)}>
+          <RowValueSelector id="rowsSelector">
+            {[...new Set(selectedRowValues)].filter(Boolean).map((rowValue) => (
+              <li key={rowValue}>
+                <input type="checkbox" value={rowValue} />
+                {rowValue}
+              </li>
+            ))}
+          </RowValueSelector>
+          <HorizontalList alignRight>
+            <Button
+              onClick={() => {
+                const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
+                  "#rowsSelector input"
+                );
+                let searchString = "";
+                rows.forEach((row) => {
+                  if (row.checked) {
+                    searchString = searchString
+                      ? `${searchString}|${row.value}`
+                      : row.value;
+                  }
+                });
+                const columnFiltersCopy = { ...columnFilters };
+                columnFiltersCopy[selectedHeader] = searchString;
+                setColumnFilters(columnFiltersCopy);
+                setSelectedRowValues(null);
+              }}
+            >
+              Apply
+            </Button>
+          </HorizontalList>
+        </Modal>
+      )}
       <FullScreenWrapper fullScreen={fullScreen}>
         {hasFullScreen && (
           <FullScreenActions>
@@ -329,7 +434,7 @@ export function SimpleTable({
                 ))}
               </GroupBySelect>
             )}
-            {hasColumnFiltering && (
+            {hasColumnFiltering && areFiltersSet && (
               <Action
                 type="button"
                 onClick={() => {
@@ -355,22 +460,65 @@ export function SimpleTable({
                     key={header}
                     isSorter={header === headers[sorter]}
                     sortingOrder={sortingOrder}
-                    onClick={() => onHeaderClick(i)}
                     columnFiltering={hasColumnFiltering}
+                    collapsed={collapsedColumns[header]}
                   >
-                    <span>{header}</span>
+                    <span
+                      onClick={() => onHeaderClick(i)}
+                      style={
+                        collapsedColumns[header]
+                          ? {
+                              width: "24px",
+                              display: "inline-block",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }
+                          : {}
+                      }
+                    >
+                      {header}
+                    </span>
+                    <span
+                      style={{ float: "right" }}
+                      onClick={() => {
+                        const collapsedColumnsCopy = { ...collapsedColumns };
+                        collapsedColumnsCopy[header] = !collapsedColumnsCopy[
+                          header
+                        ];
+                        setCollapsedColumns(collapsedColumnsCopy);
+                      }}
+                    >
+                      {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
+                    </span>
                     {hasColumnFiltering && (
-                      <input
-                        type="text"
-                        placeholder="Filter"
-                        onClick={(e) => e.stopPropagation()}
-                        value={columnFilters[header]}
-                        onChange={(e) => {
-                          const columnFiltersCopy = { ...columnFilters };
-                          columnFiltersCopy[header] = e.target.value;
-                          setColumnFilters(columnFiltersCopy);
-                        }}
-                      />
+                      <>
+                        <input
+                          type="text"
+                          placeholder="Filter"
+                          value={columnFilters[header]}
+                          onChange={(e) => {
+                            const columnFiltersCopy = { ...columnFilters };
+                            columnFiltersCopy[header] = e.target.value;
+                            setColumnFilters(columnFiltersCopy);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedRowValues(data[header]);
+                            setSelectedHeader(header);
+                          }}
+                        >
+                          <svg
+                            id="Icons"
+                            version="1.1"
+                            viewBox="0 0 32 32"
+                            style={{ width: "12px" }}
+                          >
+                            <path d="M16,2C9.3,2,2,3.4,2,6.5V11c0,0.3,0.1,0.6,0.3,0.7L13,21.4V29c0,0.3,0.2,0.7,0.5,0.9C13.6,30,13.8,30,14,30  c0.2,0,0.3,0,0.4-0.1l4-2c0.3-0.2,0.6-0.5,0.6-0.9v-5.6l10.7-9.7c0.2-0.2,0.3-0.5,0.3-0.7V6.5C30,3.4,22.7,2,16,2z M16,4  c8,0,11.9,1.8,12,2.5C27.9,7.2,24,9,16,9C8,9,4.1,7.2,4,6.5C4.1,5.8,8,4,16,4z" />
+                          </svg>
+                        </button>
+                      </>
                     )}
                   </Th>
                 ))}
@@ -381,20 +529,20 @@ export function SimpleTable({
                 const groupByIndex = columns.findIndex((x) => x === groupBy);
 
                 return (
-                  <>
-                    {groupBy && i === 0 && (
+                  <React.Fragment key={i}>
+                    {groupBy && i === 0 ? (
                       <Tr separator>
                         <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
                       </Tr>
-                    )}
+                    ) : null}
                     {groupBy &&
-                      i > 0 &&
-                      normalizedData[i - 1][groupByIndex] !==
-                        row[groupByIndex] && (
-                        <Tr separator>
-                          <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
-                        </Tr>
-                      )}
+                    i > 0 &&
+                    normalizedData[i - 1][groupByIndex] !==
+                      row[groupByIndex] ? (
+                      <Tr separator>
+                        <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
+                      </Tr>
+                    ) : null}
                     <Tr
                       key={`r${i}`}
                       onClick={() => {
@@ -408,10 +556,15 @@ export function SimpleTable({
                       highlight={selectedRows && selectedRows[row[0]]}
                     >
                       {row.map((field, j) => (
-                        <Td key={`${i}_${j}`}>{field}</Td>
+                        <Td
+                          key={`${i}_${j}`}
+                          collapsed={collapsedColumns[columns[j]]}
+                        >
+                          {field}
+                        </Td>
                       ))}
                     </Tr>
-                  </>
+                  </React.Fragment>
                 );
               })}
             </tbody>
