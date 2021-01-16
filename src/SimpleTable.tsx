@@ -127,6 +127,7 @@ const Th = styled.th<{
   isSorter: boolean;
   sortingOrder: string;
   columnFiltering: boolean;
+  collapsed?: boolean;
 }>`
   background: #6485ff;
   color: #fff;
@@ -136,7 +137,7 @@ const Th = styled.th<{
   text-align: left;
   vertical-align: middle;
   min-width: 180px;
-  > span:after {
+  > span:first-child:after {
     content: "▾";
     ${(props) =>
       props.sortingOrder === "DSC" &&
@@ -156,7 +157,7 @@ const Th = styled.th<{
   ${(props) =>
     props.isSorter &&
     css`
-      span:after {
+      span:first-child:after {
         visibility: visible;
       }
     `}
@@ -178,7 +179,7 @@ const Th = styled.th<{
     bottom: 5px;
     width: calc(100% - 1.4rem);
     border: none;
-    padding: 3px 42px 3px 0.3rem;
+    padding: 3px 21px 3px 0.3rem;
     border-bottom: solid 1px #3655c4;
     &::placeholder {
       color: rgba(255, 255, 255, 0.4);
@@ -208,12 +209,28 @@ const Th = styled.th<{
       outline: none;
     }
   }
+  ${(props) =>
+    props.collapsed &&
+    css`
+      max-width: 80px;
+      min-width: 80px;
+      width: 80px;
+      text-overflow: ellipsis;
+    `}
 `;
 
-const Td = styled.td`
+const Td = styled.td<{ collapsed?: boolean }>`
   padding: 1rem;
   vertical-align: top;
   white-space: nowrap;
+  ${(props) =>
+    props.collapsed &&
+    css`
+      max-width: 80px;
+      width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `}
 `;
 
 const RowValueSelector = styled.ul`
@@ -243,9 +260,12 @@ export function SimpleTable({
   let columns = Object.keys(data);
   const colFilters: { [dynamic: string]: string } = {};
   columns.forEach((col) => (colFilters[col] = ""));
+  const colExpanded: { [dynamic: string]: boolean } = {};
+  columns.forEach((col) => (colExpanded[col] = false));
 
   const [fullScreen, setFullScreen] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
+  const [collapsedColumns, setCollapsedColumns] = React.useState(colExpanded);
   const [groupBy, setGroupBy] = React.useState("");
   const [selectedRowValues, setSelectedRowValues] = React.useState<any[]>(null);
   const [selectedHeader, setSelectedHeader] = React.useState("");
@@ -355,6 +375,8 @@ export function SimpleTable({
     });
   }
 
+  const areFiltersSet = columns.some((col) => columnFilters[col] !== "");
+
   return (
     <>
       {selectedRowValues && (
@@ -412,7 +434,7 @@ export function SimpleTable({
                 ))}
               </GroupBySelect>
             )}
-            {hasColumnFiltering && (
+            {hasColumnFiltering && areFiltersSet && (
               <Action
                 type="button"
                 onClick={() => {
@@ -439,8 +461,35 @@ export function SimpleTable({
                     isSorter={header === headers[sorter]}
                     sortingOrder={sortingOrder}
                     columnFiltering={hasColumnFiltering}
+                    collapsed={collapsedColumns[header]}
                   >
-                    <span onClick={() => onHeaderClick(i)}>{header}</span>
+                    <span
+                      onClick={() => onHeaderClick(i)}
+                      style={
+                        collapsedColumns[header]
+                          ? {
+                              width: "24px",
+                              display: "inline-block",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }
+                          : {}
+                      }
+                    >
+                      {header}
+                    </span>
+                    <span
+                      style={{ float: "right" }}
+                      onClick={() => {
+                        const collapsedColumnsCopy = { ...collapsedColumns };
+                        collapsedColumnsCopy[header] = !collapsedColumnsCopy[
+                          header
+                        ];
+                        setCollapsedColumns(collapsedColumnsCopy);
+                      }}
+                    >
+                      {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
+                    </span>
                     {hasColumnFiltering && (
                       <>
                         <input
@@ -507,7 +556,12 @@ export function SimpleTable({
                       highlight={selectedRows && selectedRows[row[0]]}
                     >
                       {row.map((field, j) => (
-                        <Td key={`${i}_${j}`}>{field}</Td>
+                        <Td
+                          key={`${i}_${j}`}
+                          collapsed={collapsedColumns[columns[j]]}
+                        >
+                          {field}
+                        </Td>
                       ))}
                     </Tr>
                   </React.Fragment>
