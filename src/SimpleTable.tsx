@@ -236,9 +236,9 @@ export function SimpleTable({
   selectedRows,
   defaultSortBy,
   columnsOrdering,
-  hasFullScreen,
-  hasColumnFiltering,
-  hasGroupBy,
+  hasFullScreen = true,
+  hasColumnFiltering = true,
+  hasGroupBy = true,
 }: IProps) {
   let columns = Object.keys(data);
   const colFilters: { [dynamic: string]: string } = {};
