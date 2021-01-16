@@ -326,9 +326,13 @@ export function SimpleTable({
   });
 
   // Sort data
+  function toNumber(val: string): number {
+    return parseFloat(val);
+  }
+
   const isSorterNumeric = !normalizedData
     .filter((entry) => Boolean(entry[sorter]))
-    .some((entry) => isNaN(entry[sorter]));
+    .some((entry) => isNaN(toNumber(entry[sorter])));
 
   if (isSorterNumeric) {
     normalizedData.sort((a, b) => {
@@ -336,8 +340,8 @@ export function SimpleTable({
         return -1;
       }
       return sortingOrder === "ASC"
-        ? a[sorter] - b[sorter]
-        : b[sorter] - a[sorter];
+        ? toNumber(a[sorter]) - toNumber(b[sorter])
+        : toNumber(b[sorter]) - toNumber(a[sorter]);
     });
   } else {
     normalizedData.sort((a, b) => {
