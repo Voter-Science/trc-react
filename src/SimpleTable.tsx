@@ -16,6 +16,7 @@ import reorderISheetColumns from "./utils/reorderISheetColumns";
 
 interface IProps {
   data: ISheetContents;
+  colors?: ISheetContents;
   downloadIcon?: boolean;
   onRowClick?: (recId: string) => void;
   selectedRows?: { [dynamic: string]: boolean };
@@ -219,7 +220,7 @@ const Th = styled.th<{
     `}
 `;
 
-const Td = styled.td<{ collapsed?: boolean }>`
+const Td = styled.td<{ collapsed?: boolean; background?: string }>`
   padding: 1rem;
   vertical-align: top;
   white-space: nowrap;
@@ -230,6 +231,11 @@ const Td = styled.td<{ collapsed?: boolean }>`
       width: 80px;
       overflow: hidden;
       text-overflow: ellipsis;
+    `}
+  ${(props) =>
+    props.background &&
+    css`
+      background: ${props.background};
     `}
 `;
 
@@ -248,6 +254,7 @@ const RowValueSelector = styled.ul`
 
 export function SimpleTable({
   data,
+  colors,
   downloadIcon,
   onRowClick,
   selectedRows,
@@ -337,12 +344,17 @@ export function SimpleTable({
   //
   // Example:
   // [
-  //   ['Angelina', 'Camel', 'F', '55044'],
-  //   ['Jerald', 'Ditto', 'M', '55044'],
-  //   ['Nickolas', 'Alphonse', 'M', '55044']
+  //   { values: ['Angelina', 'Camel', 'F', '55044'], originalIndex: 0 },
+  //   { values: ['Jerald', 'Ditto', 'M', '55044'], originalIndex: 1 },
+  //   { values: ['Nickolas', 'Alphonse', 'M', '55044'], originalIndex: 2 },
   // ]
-  const normalizedData: any[][] = data[headers[0]].map((_, i) => {
-    return headers.map((header) => data[header][i]);
+  const normalizedData: { values: any[]; originalIndex: number }[] = data[
+    headers[0]
+  ].map((_, i) => {
+    return {
+      values: headers.map((header) => data[header][i]),
+      originalIndex: i,
+    };
   });
 
   // Sort data
@@ -351,21 +363,21 @@ export function SimpleTable({
   }
 
   const isSorterNumeric = !normalizedData
-    .filter((entry) => Boolean(entry[sorter]))
-    .some((entry) => isNaN(toNumber(entry[sorter])));
+    .filter((entry) => Boolean(entry.values[sorter]))
+    .some((entry) => isNaN(toNumber(entry.values[sorter])));
 
   if (isSorterNumeric) {
     normalizedData.sort((a, b) => {
-      if (!a[sorter] || !b[sorter]) {
+      if (!a.values[sorter] || !b.values[sorter]) {
         return -1;
       }
       return sortingOrder === "ASC"
-        ? toNumber(a[sorter]) - toNumber(b[sorter])
-        : toNumber(b[sorter]) - toNumber(a[sorter]);
+        ? toNumber(a.values[sorter]) - toNumber(b.values[sorter])
+        : toNumber(b.values[sorter]) - toNumber(a.values[sorter]);
     });
   } else {
     normalizedData.sort((a, b) => {
-      return a[sorter] < b[sorter]
+      return a.values[sorter] < b.values[sorter]
         ? sortingOrder === "ASC"
           ? -1
           : 1
@@ -532,15 +544,19 @@ export function SimpleTable({
                   <React.Fragment key={i}>
                     {groupBy && i === 0 ? (
                       <Tr separator>
-                        <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
+                        <Td colSpan={columns.length}>
+                          {row.values[groupByIndex]}
+                        </Td>
                       </Tr>
                     ) : null}
                     {groupBy &&
                     i > 0 &&
-                    normalizedData[i - 1][groupByIndex] !==
-                      row[groupByIndex] ? (
+                    normalizedData[i - 1].values[groupByIndex] !==
+                      row.values[groupByIndex] ? (
                       <Tr separator>
-                        <Td colSpan={columns.length}>{row[groupByIndex]}</Td>
+                        <Td colSpan={columns.length}>
+                          {row.values[groupByIndex]}
+                        </Td>
                       </Tr>
                     ) : null}
                     <Tr
@@ -551,14 +567,15 @@ export function SimpleTable({
                         const firstKeyIndex = dataKeys.findIndex(
                           (x) => x === firstKey
                         );
-                        onRowClick(row[firstKeyIndex]);
+                        onRowClick(row.values[firstKeyIndex]);
                       }}
-                      highlight={selectedRows && selectedRows[row[0]]}
+                      highlight={selectedRows && selectedRows[row.values[0]]}
                     >
-                      {row.map((field, j) => (
+                      {row.values.map((field, j) => (
                         <Td
                           key={`${i}_${j}`}
                           collapsed={collapsedColumns[columns[j]]}
+                          background={colors?.[columns[j]]?.[row.originalIndex]}
                         >
                           {field}
                         </Td>
