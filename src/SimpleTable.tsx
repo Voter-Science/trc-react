@@ -287,6 +287,8 @@ export function SimpleTable({
     columns = Object.keys(data);
   }
 
+  let originalIndexes: number[] = [];
+
   // Filter by column filter
   columns.forEach((col) => {
     if (columnFilters[col]) {
@@ -307,6 +309,7 @@ export function SimpleTable({
       columns.forEach((col) => {
         newData[col] = [];
         [...new Set(allIndexes)].forEach((indx) => {
+          originalIndexes.push(indx);
           newData[col].push(data[col][indx]);
         });
       });
@@ -353,7 +356,7 @@ export function SimpleTable({
   ].map((_, i) => {
     return {
       values: headers.map((header) => data[header][i]),
-      originalIndex: i,
+      originalIndex: originalIndexes[i] || i,
     };
   });
 
