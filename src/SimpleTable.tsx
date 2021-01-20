@@ -411,6 +411,17 @@ export function SimpleTable({
           </RowValueSelector>
           <HorizontalList alignRight>
             <Button
+              secondary
+              onClick={() => {
+                const columnFiltersCopy = { ...columnFilters };
+                columnFiltersCopy[selectedHeader] = "";
+                setColumnFilters(columnFiltersCopy);
+                setSelectedRowValues(null);
+              }}
+            >
+              Clear
+            </Button>
+            <Button
               onClick={() => {
                 const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
                   "#rowsSelector input"
