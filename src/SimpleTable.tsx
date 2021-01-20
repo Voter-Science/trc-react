@@ -448,38 +448,57 @@ export function SimpleTable({
       <FullScreenWrapper fullScreen={fullScreen}>
         {hasFullScreen && (
           <FullScreenActions>
-            {hasGroupBy && (
-              <GroupBySelect
-                value={groupBy}
-                onChange={(e) => {
-                  setGroupBy(e.target.value);
-                  setSorter(columns.findIndex((x) => x === e.target.value));
-                  setSortingOrder("ASC");
-                }}
-              >
-                <option value="">Group by</option>
-                {columns.map((col) => (
-                  <option key={col} value={col}>
-                    {col}
-                  </option>
-                ))}
-              </GroupBySelect>
-            )}
-            {hasColumnFiltering && areFiltersSet && (
-              <Action
-                type="button"
-                onClick={() => {
-                  const columnFiltersCopy = { ...columnFilters };
-                  columns.forEach((col) => (columnFiltersCopy[col] = ""));
-                  setColumnFilters(columnFiltersCopy);
-                }}
-              >
-                Clear filters &#8861;
+            <p>
+              Showing{" "}
+              <strong>
+                {data?.[Object.keys(data)?.[0]].length > 500
+                  ? 500
+                  : data?.[Object.keys(data)?.[0]].length}
+              </strong>{" "}
+              of{" "}
+              <strong>
+                {originalData?.[Object.keys(originalData)?.[0]].length}
+              </strong>{" "}
+              results
+            </p>
+            <div>
+              {hasGroupBy && (
+                <GroupBySelect
+                  value={groupBy}
+                  onChange={(e) => {
+                    setGroupBy(e.target.value);
+                    setSorter(columns.findIndex((x) => x === e.target.value));
+                    setSortingOrder("ASC");
+                  }}
+                >
+                  <option value="">Group by</option>
+                  {columns.map((col) => (
+                    <option key={col} value={col}>
+                      {col}
+                    </option>
+                  ))}
+                </GroupBySelect>
+              )}
+              {hasColumnFiltering && areFiltersSet && (
+                <Action
+                  type="button"
+                  onClick={() => {
+                    const columnFiltersCopy = { ...columnFilters };
+                    columns.forEach((col) => (columnFiltersCopy[col] = ""));
+                    setColumnFilters(columnFiltersCopy);
+                  }}
+                >
+                  Clear filters &#8861;
+                </Action>
+              )}
+              <Action type="button" onClick={() => setFullScreen(!fullScreen)}>
+                {fullScreen ? (
+                  <>Collapse &#10066;</>
+                ) : (
+                  <>Full screen &#10063;</>
+                )}
               </Action>
-            )}
-            <Action type="button" onClick={() => setFullScreen(!fullScreen)}>
-              {fullScreen ? <>Collapse &#10066;</> : <>Full screen &#10063;</>}
-            </Action>
+            </div>
           </FullScreenActions>
         )}
         <TableWrapper fullScreen={fullScreen}>
