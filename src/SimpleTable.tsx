@@ -50,7 +50,17 @@ const FullScreenWrapper = styled.div<{ fullScreen: boolean }>`
 
 const FullScreenActions = styled.div`
   height: 30px;
-  text-align: right;
+  display: flex;
+  > p {
+    margin: 0;
+    font-size: 13px;
+    position: relative;
+    top: 4px;
+  }
+  > div {
+    text-align: right;
+    flex-grow: 1;
+  }
 `;
 
 const Action = styled.button`
@@ -137,8 +147,13 @@ const Th = styled.th<{
   position: relative;
   text-align: left;
   vertical-align: middle;
-  min-width: 180px;
-  > span:first-child:after {
+  .header-string {
+    display: flex;
+  }
+  span:first-child {
+    flex-grow: 1;
+  }
+  span:first-child:after {
     content: "▾";
     ${(props) =>
       props.sortingOrder === "DSC" &&
@@ -167,7 +182,7 @@ const Th = styled.th<{
     css`
       padding: 1rem;
     `}
-  > span {
+  span {
     cursor: pointer;
   }
   > input {
@@ -279,6 +294,37 @@ export function SimpleTable({
 
   const originalData = JSON.parse(JSON.stringify(data));
 
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashed = urlParams.get("TableFilters");
+    if (hashed) {
+      const decoded = decodeURI(hashed);
+      const toObject = JSON.parse(decoded);
+      setColumnFilters(toObject);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const hasValues = columns.some((x) => columnFilters[x] !== "");
+
+    if (hasValues) {
+      const encoded = encodeURI(JSON.stringify(columnFilters));
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set("TableFilters", encoded);
+      const newRelativePathQuery = `${
+        window.location.pathname
+      }?${urlParams.toString()}`;
+      history.pushState(null, "", newRelativePathQuery);
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.delete("TableFilters");
+      const newRelativePathQuery = `${
+        window.location.pathname
+      }?${urlParams.toString()}`;
+      history.pushState(null, "", newRelativePathQuery);
+    }
+  }, [colFilters]);
+
   if (columnsOrdering) {
     data = reorderISheetColumns(
       JSON.parse(JSON.stringify(data)),
@@ -286,8 +332,6 @@ export function SimpleTable({
     );
     columns = Object.keys(data);
   }
-
-  let originalIndexes: number[] = [];
 
   // Filter by column filter
   columns.forEach((col) => {
@@ -306,14 +350,21 @@ export function SimpleTable({
         });
       });
       const newData: { [dynamic: string]: any[] } = {};
+      const newColors: { [dynamic: string]: any[] } = {};
       columns.forEach((col) => {
         newData[col] = [];
+        if (colors?.[col]) {
+          newColors[col] = [];
+        }
         [...new Set(allIndexes)].forEach((indx) => {
-          originalIndexes.push(indx);
           newData[col].push(data[col][indx]);
+          if (colors?.[col]) {
+            newColors[col].push(colors[col][indx]);
+          }
         });
       });
       data = { ...newData };
+      colors = { ...newColors };
     }
   });
 
@@ -356,7 +407,7 @@ export function SimpleTable({
   ].map((_, i) => {
     return {
       values: headers.map((header) => data[header][i]),
-      originalIndex: originalIndexes[i] || i,
+      originalIndex: i,
     };
   });
 
@@ -406,6 +457,17 @@ export function SimpleTable({
           </RowValueSelector>
           <HorizontalList alignRight>
             <Button
+              secondary
+              onClick={() => {
+                const columnFiltersCopy = { ...columnFilters };
+                columnFiltersCopy[selectedHeader] = "";
+                setColumnFilters(columnFiltersCopy);
+                setSelectedRowValues(null);
+              }}
+            >
+              Clear
+            </Button>
+            <Button
               onClick={() => {
                 const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
                   "#rowsSelector input"
@@ -432,38 +494,57 @@ export function SimpleTable({
       <FullScreenWrapper fullScreen={fullScreen}>
         {hasFullScreen && (
           <FullScreenActions>
-            {hasGroupBy && (
-              <GroupBySelect
-                value={groupBy}
-                onChange={(e) => {
-                  setGroupBy(e.target.value);
-                  setSorter(columns.findIndex((x) => x === e.target.value));
-                  setSortingOrder("ASC");
-                }}
-              >
-                <option value="">Group by</option>
-                {columns.map((col) => (
-                  <option key={col} value={col}>
-                    {col}
-                  </option>
-                ))}
-              </GroupBySelect>
-            )}
-            {hasColumnFiltering && areFiltersSet && (
-              <Action
-                type="button"
-                onClick={() => {
-                  const columnFiltersCopy = { ...columnFilters };
-                  columns.forEach((col) => (columnFiltersCopy[col] = ""));
-                  setColumnFilters(columnFiltersCopy);
-                }}
-              >
-                Clear filters &#8861;
+            <p>
+              Showing{" "}
+              <strong>
+                {data?.[Object.keys(data)?.[0]].length > 500
+                  ? 500
+                  : data?.[Object.keys(data)?.[0]].length}
+              </strong>{" "}
+              of{" "}
+              <strong>
+                {originalData?.[Object.keys(originalData)?.[0]].length}
+              </strong>{" "}
+              results
+            </p>
+            <div>
+              {hasGroupBy && (
+                <GroupBySelect
+                  value={groupBy}
+                  onChange={(e) => {
+                    setGroupBy(e.target.value);
+                    setSorter(columns.findIndex((x) => x === e.target.value));
+                    setSortingOrder("ASC");
+                  }}
+                >
+                  <option value="">Group by</option>
+                  {columns.map((col) => (
+                    <option key={col} value={col}>
+                      {col}
+                    </option>
+                  ))}
+                </GroupBySelect>
+              )}
+              {hasColumnFiltering && areFiltersSet && (
+                <Action
+                  type="button"
+                  onClick={() => {
+                    const columnFiltersCopy = { ...columnFilters };
+                    columns.forEach((col) => (columnFiltersCopy[col] = ""));
+                    setColumnFilters(columnFiltersCopy);
+                  }}
+                >
+                  Clear filters &#8861;
+                </Action>
+              )}
+              <Action type="button" onClick={() => setFullScreen(!fullScreen)}>
+                {fullScreen ? (
+                  <>Collapse &#10066;</>
+                ) : (
+                  <>Full screen &#10063;</>
+                )}
               </Action>
-            )}
-            <Action type="button" onClick={() => setFullScreen(!fullScreen)}>
-              {fullScreen ? <>Collapse &#10066;</> : <>Full screen &#10063;</>}
-            </Action>
+            </div>
           </FullScreenActions>
         )}
         <TableWrapper fullScreen={fullScreen}>
@@ -478,33 +559,35 @@ export function SimpleTable({
                     columnFiltering={hasColumnFiltering}
                     collapsed={collapsedColumns[header]}
                   >
-                    <span
-                      onClick={() => onHeaderClick(i)}
-                      style={
-                        collapsedColumns[header]
-                          ? {
-                              width: "24px",
-                              display: "inline-block",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }
-                          : {}
-                      }
-                    >
-                      {header}
-                    </span>
-                    <span
-                      style={{ float: "right" }}
-                      onClick={() => {
-                        const collapsedColumnsCopy = { ...collapsedColumns };
-                        collapsedColumnsCopy[header] = !collapsedColumnsCopy[
-                          header
-                        ];
-                        setCollapsedColumns(collapsedColumnsCopy);
-                      }}
-                    >
-                      {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
-                    </span>
+                    <div className="header-string">
+                      <span
+                        onClick={() => onHeaderClick(i)}
+                        style={
+                          collapsedColumns[header]
+                            ? {
+                                width: "24px",
+                                display: "inline-block",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }
+                            : {}
+                        }
+                      >
+                        {header}
+                      </span>
+                      <span
+                        style={{ marginLeft: "10px" }}
+                        onClick={() => {
+                          const collapsedColumnsCopy = { ...collapsedColumns };
+                          collapsedColumnsCopy[header] = !collapsedColumnsCopy[
+                            header
+                          ];
+                          setCollapsedColumns(collapsedColumnsCopy);
+                        }}
+                      >
+                        {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
+                      </span>
+                    </div>
                     {hasColumnFiltering && (
                       <>
                         <input
