@@ -294,6 +294,37 @@ export function SimpleTable({
 
   const originalData = JSON.parse(JSON.stringify(data));
 
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashed = urlParams.get("TableFilters");
+    if (hashed) {
+      const decoded = decodeURI(hashed);
+      const toObject = JSON.parse(decoded);
+      setColumnFilters(toObject);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const hasValues = columns.some((x) => columnFilters[x] !== "");
+
+    if (hasValues) {
+      const encoded = encodeURI(JSON.stringify(columnFilters));
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set("TableFilters", encoded);
+      const newRelativePathQuery = `${
+        window.location.pathname
+      }?${urlParams.toString()}`;
+      history.pushState(null, "", newRelativePathQuery);
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.delete("TableFilters");
+      const newRelativePathQuery = `${
+        window.location.pathname
+      }?${urlParams.toString()}`;
+      history.pushState(null, "", newRelativePathQuery);
+    }
+  }, [colFilters]);
+
   if (columnsOrdering) {
     data = reorderISheetColumns(
       JSON.parse(JSON.stringify(data)),
