@@ -50,7 +50,17 @@ const FullScreenWrapper = styled.div<{ fullScreen: boolean }>`
 
 const FullScreenActions = styled.div`
   height: 30px;
-  text-align: right;
+  display: flex;
+  > p {
+    margin: 0;
+    font-size: 13px;
+    position: relative;
+    top: 4px;
+  }
+  > div {
+    text-align: right;
+    flex-grow: 1;
+  }
 `;
 
 const Action = styled.button`
@@ -137,8 +147,13 @@ const Th = styled.th<{
   position: relative;
   text-align: left;
   vertical-align: middle;
-  min-width: 180px;
-  > span:first-child:after {
+  .header-string {
+    display: flex;
+  }
+  span:first-child {
+    flex-grow: 1;
+  }
+  span:first-child:after {
     content: "▾";
     ${(props) =>
       props.sortingOrder === "DSC" &&
@@ -167,7 +182,7 @@ const Th = styled.th<{
     css`
       padding: 1rem;
     `}
-  > span {
+  span {
     cursor: pointer;
   }
   > input {
@@ -513,33 +528,35 @@ export function SimpleTable({
                     columnFiltering={hasColumnFiltering}
                     collapsed={collapsedColumns[header]}
                   >
-                    <span
-                      onClick={() => onHeaderClick(i)}
-                      style={
-                        collapsedColumns[header]
-                          ? {
-                              width: "24px",
-                              display: "inline-block",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }
-                          : {}
-                      }
-                    >
-                      {header}
-                    </span>
-                    <span
-                      style={{ float: "right" }}
-                      onClick={() => {
-                        const collapsedColumnsCopy = { ...collapsedColumns };
-                        collapsedColumnsCopy[header] = !collapsedColumnsCopy[
-                          header
-                        ];
-                        setCollapsedColumns(collapsedColumnsCopy);
-                      }}
-                    >
-                      {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
-                    </span>
+                    <div className="header-string">
+                      <span
+                        onClick={() => onHeaderClick(i)}
+                        style={
+                          collapsedColumns[header]
+                            ? {
+                                width: "24px",
+                                display: "inline-block",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }
+                            : {}
+                        }
+                      >
+                        {header}
+                      </span>
+                      <span
+                        style={{ marginLeft: "10px" }}
+                        onClick={() => {
+                          const collapsedColumnsCopy = { ...collapsedColumns };
+                          collapsedColumnsCopy[header] = !collapsedColumnsCopy[
+                            header
+                          ];
+                          setCollapsedColumns(collapsedColumnsCopy);
+                        }}
+                      >
+                        {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
+                      </span>
+                    </div>
                     {hasColumnFiltering && (
                       <>
                         <input
