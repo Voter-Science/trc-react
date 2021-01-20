@@ -287,8 +287,6 @@ export function SimpleTable({
     columns = Object.keys(data);
   }
 
-  let originalIndexes: number[] = [];
-
   // Filter by column filter
   columns.forEach((col) => {
     if (columnFilters[col]) {
@@ -306,14 +304,21 @@ export function SimpleTable({
         });
       });
       const newData: { [dynamic: string]: any[] } = {};
+      const newColors: { [dynamic: string]: any[] } = {};
       columns.forEach((col) => {
         newData[col] = [];
+        if (colors?.[col]) {
+          newColors[col] = [];
+        }
         [...new Set(allIndexes)].forEach((indx) => {
-          originalIndexes.push(indx);
           newData[col].push(data[col][indx]);
+          if (colors?.[col]) {
+            newColors[col].push(colors[col][indx]);
+          }
         });
       });
       data = { ...newData };
+      colors = { ...newColors };
     }
   });
 
@@ -356,7 +361,7 @@ export function SimpleTable({
   ].map((_, i) => {
     return {
       values: headers.map((header) => data[header][i]),
-      originalIndex: originalIndexes[i] || i,
+      originalIndex: i,
     };
   });
 
