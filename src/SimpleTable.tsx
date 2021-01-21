@@ -267,6 +267,14 @@ const RowValueSelector = styled.ul`
   }
 `;
 
+const NumericFilterLi = styled.li`
+  padding: 6px 0;
+  > span {
+    display: inline-block;
+    width: 105px;
+  }
+`;
+
 export function SimpleTable({
   data,
   colors,
@@ -291,6 +299,9 @@ export function SimpleTable({
   const [groupBy, setGroupBy] = React.useState("");
   const [selectedRowValues, setSelectedRowValues] = React.useState<any[]>(null);
   const [selectedHeader, setSelectedHeader] = React.useState("");
+  const [isSelectedHeaderNumeric, setIsSelectedHeaderNumeric] = React.useState(
+    false
+  );
 
   const originalData = JSON.parse(JSON.stringify(data));
 
@@ -343,6 +354,46 @@ export function SimpleTable({
           if (!filter) {
             return;
           }
+          // test for numeric filter
+          if (filter.includes("<>")) {
+            const numericFilters = filter.split("<>");
+
+            if (numericFilters[0] && numericFilters[1]) {
+              if (
+                !isNaN(toNumber(numericFilters[0])) &&
+                !isNaN(toNumber(numericFilters[1]))
+              ) {
+                if (
+                  toNumber(entry) < toNumber(numericFilters[0]) &&
+                  toNumber(entry) > toNumber(numericFilters[1])
+                ) {
+                  allIndexes.push(index);
+                }
+              }
+              return;
+            }
+
+            if (numericFilters[0]) {
+              if (!isNaN(toNumber(numericFilters[0]))) {
+                if (toNumber(entry) < toNumber(numericFilters[0])) {
+                  allIndexes.push(index);
+                }
+              }
+              return;
+            }
+
+            if (numericFilters[1]) {
+              if (!isNaN(toNumber(numericFilters[1]))) {
+                if (toNumber(entry) > toNumber(numericFilters[1])) {
+                  allIndexes.push(index);
+                }
+              }
+              return;
+            }
+
+            return;
+          }
+          // test for string
           const regex = new RegExp(filter.trim(), "i");
           if (regex.test(entry)) {
             allIndexes.push(index);
@@ -448,12 +499,27 @@ export function SimpleTable({
       {selectedRowValues && (
         <Modal close={() => setSelectedRowValues(null)}>
           <RowValueSelector id="rowsSelector">
-            {[...new Set(selectedRowValues)].filter(Boolean).map((rowValue) => (
-              <li key={rowValue}>
-                <input type="checkbox" value={rowValue} />
-                {rowValue}
-              </li>
-            ))}
+            {!isSelectedHeaderNumeric ? (
+              [...new Set(selectedRowValues)]
+                .filter(Boolean)
+                .map((rowValue) => (
+                  <li key={rowValue}>
+                    <input type="checkbox" value={rowValue} />
+                    {rowValue}
+                  </li>
+                ))
+            ) : (
+              <>
+                <NumericFilterLi>
+                  <span>Greater than:</span>{" "}
+                  <input type="number" id="filterGreaterThan" />
+                </NumericFilterLi>
+                <NumericFilterLi>
+                  <span>Less than:</span>{" "}
+                  <input type="number" id="filterLessThan" />
+                </NumericFilterLi>
+              </>
+            )}
           </RowValueSelector>
           <HorizontalList alignRight>
             <Button
@@ -469,21 +535,39 @@ export function SimpleTable({
             </Button>
             <Button
               onClick={() => {
-                const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
-                  "#rowsSelector input"
-                );
-                let searchString = "";
-                rows.forEach((row) => {
-                  if (row.checked) {
-                    searchString = searchString
-                      ? `${searchString}|${row.value}`
-                      : row.value;
-                  }
-                });
-                const columnFiltersCopy = { ...columnFilters };
-                columnFiltersCopy[selectedHeader] = searchString;
-                setColumnFilters(columnFiltersCopy);
-                setSelectedRowValues(null);
+                if (!isSelectedHeaderNumeric) {
+                  const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
+                    "#rowsSelector input"
+                  );
+                  let searchString = "";
+                  rows.forEach((row) => {
+                    if (row.checked) {
+                      searchString = searchString
+                        ? `${searchString}|${row.value}`
+                        : row.value;
+                    }
+                  });
+                  const columnFiltersCopy = { ...columnFilters };
+                  columnFiltersCopy[selectedHeader] = searchString;
+                  setColumnFilters(columnFiltersCopy);
+                  setSelectedRowValues(null);
+                } else {
+                  const greaterThan = document.querySelector<HTMLInputElement>(
+                    "#filterGreaterThan"
+                  ).value;
+                  const lessThan = document.querySelector<HTMLInputElement>(
+                    "#filterLessThan"
+                  ).value;
+                  let customFilter = "";
+                  if (greaterThan) customFilter = "<>" + greaterThan;
+                  if (!greaterThan && lessThan) customFilter = lessThan + "<>";
+                  if (greaterThan && lessThan)
+                    customFilter = `${lessThan}<>${greaterThan}`;
+                  const columnFiltersCopy = { ...columnFilters };
+                  columnFiltersCopy[selectedHeader] = customFilter;
+                  setColumnFilters(columnFiltersCopy);
+                  setSelectedRowValues(null);
+                }
               }}
             >
               Apply
@@ -605,6 +689,12 @@ export function SimpleTable({
                           onClick={() => {
                             setSelectedRowValues(data[header]);
                             setSelectedHeader(header);
+                            const isSelectedHeaderNumeric = !normalizedData
+                              .filter((entry) => Boolean(entry.values[i]))
+                              .some((entry) =>
+                                isNaN(toNumber(entry.values[i]))
+                              );
+                            setIsSelectedHeaderNumeric(isSelectedHeaderNumeric);
                           }}
                         >
                           <svg
