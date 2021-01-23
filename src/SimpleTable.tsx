@@ -25,6 +25,7 @@ interface IProps {
   hasFullScreen?: boolean;
   hasColumnFiltering?: boolean;
   hasGroupBy?: boolean;
+  tableIdentifier?: string;
 }
 
 interface TrProps {
@@ -286,6 +287,7 @@ export function SimpleTable({
   hasFullScreen = true,
   hasColumnFiltering = true,
   hasGroupBy = true,
+  tableIdentifier = "Table1",
 }: IProps) {
   let columns = Object.keys(data);
   const colFilters: { [dynamic: string]: string } = {};
@@ -311,15 +313,24 @@ export function SimpleTable({
     if (hashed) {
       const decoded = decodeURI(hashed);
       const toObject = JSON.parse(decoded);
-      setColumnFilters(toObject);
+      setColumnFilters(toObject[tableIdentifier]);
     }
   }, []);
 
   React.useEffect(() => {
     const hasValues = columns.some((x) => columnFilters[x] !== "");
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashed = urlParams.get("TableFilters");
+    let currentQueryStringObject: { [dynamic: string]: any } = {};
+    if (hashed) {
+      const decoded = decodeURI(hashed);
+      currentQueryStringObject = JSON.parse(decoded);
+    }
+
     if (hasValues) {
-      const encoded = encodeURI(JSON.stringify(columnFilters));
+      currentQueryStringObject[tableIdentifier] = columnFilters;
+      const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
       const urlParams = new URLSearchParams(window.location.search);
       urlParams.set("TableFilters", encoded);
       const newRelativePathQuery = `${
@@ -327,8 +338,14 @@ export function SimpleTable({
       }?${urlParams.toString()}`;
       history.pushState(null, "", newRelativePathQuery);
     } else {
-      const urlParams = new URLSearchParams(window.location.search);
-      urlParams.delete("TableFilters");
+      let urlParams = new URLSearchParams(window.location.search);
+      delete currentQueryStringObject[tableIdentifier];
+      if (Object.keys(currentQueryStringObject).length === 0) {
+        urlParams.delete("TableFilters");
+      } else {
+        const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
+        urlParams.set("TableFilters", encoded);
+      }
       const newRelativePathQuery = `${
         window.location.pathname
       }?${urlParams.toString()}`;
