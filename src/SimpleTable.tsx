@@ -25,6 +25,7 @@ interface IProps {
   hasFullScreen?: boolean;
   hasColumnFiltering?: boolean;
   hasGroupBy?: boolean;
+  tableIdentifier?: string;
 }
 
 interface TrProps {
@@ -286,6 +287,7 @@ export function SimpleTable({
   hasFullScreen = true,
   hasColumnFiltering = true,
   hasGroupBy = true,
+  tableIdentifier = "Table1",
 }: IProps) {
   let columns = Object.keys(data);
   const colFilters: { [dynamic: string]: string } = {};
@@ -311,15 +313,24 @@ export function SimpleTable({
     if (hashed) {
       const decoded = decodeURI(hashed);
       const toObject = JSON.parse(decoded);
-      setColumnFilters(toObject);
+      setColumnFilters(toObject[tableIdentifier]);
     }
   }, []);
 
   React.useEffect(() => {
     const hasValues = columns.some((x) => columnFilters[x] !== "");
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashed = urlParams.get("TableFilters");
+    let currentQueryStringObject: { [dynamic: string]: any } = {};
+    if (hashed) {
+      const decoded = decodeURI(hashed);
+      currentQueryStringObject = JSON.parse(decoded);
+    }
+
     if (hasValues) {
-      const encoded = encodeURI(JSON.stringify(columnFilters));
+      currentQueryStringObject[tableIdentifier] = columnFilters;
+      const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
       const urlParams = new URLSearchParams(window.location.search);
       urlParams.set("TableFilters", encoded);
       const newRelativePathQuery = `${
@@ -327,8 +338,14 @@ export function SimpleTable({
       }?${urlParams.toString()}`;
       history.pushState(null, "", newRelativePathQuery);
     } else {
-      const urlParams = new URLSearchParams(window.location.search);
-      urlParams.delete("TableFilters");
+      let urlParams = new URLSearchParams(window.location.search);
+      delete currentQueryStringObject[tableIdentifier];
+      if (Object.keys(currentQueryStringObject).length === 0) {
+        urlParams.delete("TableFilters");
+      } else {
+        const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
+        urlParams.set("TableFilters", encoded);
+      }
       const newRelativePathQuery = `${
         window.location.pathname
       }?${urlParams.toString()}`;
@@ -494,20 +511,113 @@ export function SimpleTable({
 
   const areFiltersSet = columns.some((col) => columnFilters[col] !== "");
 
+  function onColumnFilterChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+    header: string
+  ) {
+    const columnFiltersCopy = { ...columnFilters };
+    columnFiltersCopy[header] = e.target.value;
+    setColumnFilters(columnFiltersCopy);
+  }
+
+  function clearFilter() {
+    const columnFiltersCopy = { ...columnFilters };
+    columnFiltersCopy[selectedHeader] = "";
+    setColumnFilters(columnFiltersCopy);
+    setSelectedRowValues(null);
+  }
+
+  function applyColumnFilter() {
+    if (!isSelectedHeaderNumeric) {
+      const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
+        "#rowsSelector input"
+      );
+      let searchString = "";
+      rows.forEach((row) => {
+        if (row.checked) {
+          searchString = searchString
+            ? `${searchString}|${row.value}`
+            : row.value;
+        }
+      });
+      const columnFiltersCopy = { ...columnFilters };
+      columnFiltersCopy[selectedHeader] = searchString;
+      setColumnFilters(columnFiltersCopy);
+      setSelectedRowValues(null);
+    } else {
+      const greaterThan = document.querySelector<HTMLInputElement>(
+        "#filterGreaterThan"
+      ).value;
+      const lessThan = document.querySelector<HTMLInputElement>(
+        "#filterLessThan"
+      ).value;
+      let customFilter = "";
+      if (greaterThan) customFilter = "<>" + greaterThan;
+      if (!greaterThan && lessThan) customFilter = lessThan + "<>";
+      if (greaterThan && lessThan) customFilter = `${lessThan}<>${greaterThan}`;
+      const columnFiltersCopy = { ...columnFilters };
+      columnFiltersCopy[selectedHeader] = customFilter;
+      setColumnFilters(columnFiltersCopy);
+      setSelectedRowValues(null);
+    }
+  }
+
+  function clearFilters() {
+    const columnFiltersCopy = { ...columnFilters };
+    columns.forEach((col) => (columnFiltersCopy[col] = ""));
+    setColumnFilters(columnFiltersCopy);
+  }
+
+  function onGroupByChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    setGroupBy(e.target.value);
+    setSorter(columns.findIndex((x) => x === e.target.value));
+    setSortingOrder("ASC");
+  }
+
+  function toggleColumnCollapse(header: string) {
+    const collapsedColumnsCopy = { ...collapsedColumns };
+    collapsedColumnsCopy[header] = !collapsedColumnsCopy[header];
+    setCollapsedColumns(collapsedColumnsCopy);
+  }
+
+  function setModalData(header: string, i: number) {
+    const uniqueValues = data[header]
+      .reduce((result, element) => {
+        var normalize = (x: any) =>
+          typeof x === "string" ? x.toLowerCase() : x;
+
+        var normalizedElement = normalize(element);
+        if (
+          result.every(
+            (otherElement) => normalize(otherElement) !== normalizedElement
+          )
+        ) {
+          result.push(element);
+        }
+
+        return result;
+      }, [])
+      .filter(Boolean);
+    setSelectedRowValues(uniqueValues);
+    setSelectedHeader(header);
+    const isSelectedHeaderNumeric = !normalizedData
+      .filter((entry) => Boolean(entry.values[i]))
+      .some((entry) => isNaN(toNumber(entry.values[i])));
+    setIsSelectedHeaderNumeric(isSelectedHeaderNumeric);
+  }
+
   return (
     <>
       {selectedRowValues && (
         <Modal close={() => setSelectedRowValues(null)}>
           <RowValueSelector id="rowsSelector">
             {!isSelectedHeaderNumeric ? (
-              [...new Set(selectedRowValues)]
-                .filter(Boolean)
-                .map((rowValue) => (
-                  <li key={rowValue}>
-                    <input type="checkbox" value={rowValue} />
-                    {rowValue}
-                  </li>
-                ))
+              selectedRowValues.map((rowValue) => (
+                <li key={rowValue}>
+                  <input type="checkbox" value={rowValue} />
+                  {rowValue}
+                </li>
+              ))
             ) : (
               <>
                 <NumericFilterLi>
@@ -522,56 +632,10 @@ export function SimpleTable({
             )}
           </RowValueSelector>
           <HorizontalList alignRight>
-            <Button
-              secondary
-              onClick={() => {
-                const columnFiltersCopy = { ...columnFilters };
-                columnFiltersCopy[selectedHeader] = "";
-                setColumnFilters(columnFiltersCopy);
-                setSelectedRowValues(null);
-              }}
-            >
+            <Button secondary onClick={clearFilter}>
               Clear
             </Button>
-            <Button
-              onClick={() => {
-                if (!isSelectedHeaderNumeric) {
-                  const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
-                    "#rowsSelector input"
-                  );
-                  let searchString = "";
-                  rows.forEach((row) => {
-                    if (row.checked) {
-                      searchString = searchString
-                        ? `${searchString}|${row.value}`
-                        : row.value;
-                    }
-                  });
-                  const columnFiltersCopy = { ...columnFilters };
-                  columnFiltersCopy[selectedHeader] = searchString;
-                  setColumnFilters(columnFiltersCopy);
-                  setSelectedRowValues(null);
-                } else {
-                  const greaterThan = document.querySelector<HTMLInputElement>(
-                    "#filterGreaterThan"
-                  ).value;
-                  const lessThan = document.querySelector<HTMLInputElement>(
-                    "#filterLessThan"
-                  ).value;
-                  let customFilter = "";
-                  if (greaterThan) customFilter = "<>" + greaterThan;
-                  if (!greaterThan && lessThan) customFilter = lessThan + "<>";
-                  if (greaterThan && lessThan)
-                    customFilter = `${lessThan}<>${greaterThan}`;
-                  const columnFiltersCopy = { ...columnFilters };
-                  columnFiltersCopy[selectedHeader] = customFilter;
-                  setColumnFilters(columnFiltersCopy);
-                  setSelectedRowValues(null);
-                }
-              }}
-            >
-              Apply
-            </Button>
+            <Button onClick={applyColumnFilter}>Apply</Button>
           </HorizontalList>
         </Modal>
       )}
@@ -593,14 +657,7 @@ export function SimpleTable({
             </p>
             <div>
               {hasGroupBy && (
-                <GroupBySelect
-                  value={groupBy}
-                  onChange={(e) => {
-                    setGroupBy(e.target.value);
-                    setSorter(columns.findIndex((x) => x === e.target.value));
-                    setSortingOrder("ASC");
-                  }}
-                >
+                <GroupBySelect value={groupBy} onChange={onGroupByChange}>
                   <option value="">Group by</option>
                   {columns.map((col) => (
                     <option key={col} value={col}>
@@ -610,14 +667,7 @@ export function SimpleTable({
                 </GroupBySelect>
               )}
               {hasColumnFiltering && areFiltersSet && (
-                <Action
-                  type="button"
-                  onClick={() => {
-                    const columnFiltersCopy = { ...columnFilters };
-                    columns.forEach((col) => (columnFiltersCopy[col] = ""));
-                    setColumnFilters(columnFiltersCopy);
-                  }}
-                >
+                <Action type="button" onClick={clearFilters}>
                   Clear filters &#8861;
                 </Action>
               )}
@@ -661,13 +711,7 @@ export function SimpleTable({
                       </span>
                       <span
                         style={{ marginLeft: "10px" }}
-                        onClick={() => {
-                          const collapsedColumnsCopy = { ...collapsedColumns };
-                          collapsedColumnsCopy[header] = !collapsedColumnsCopy[
-                            header
-                          ];
-                          setCollapsedColumns(collapsedColumnsCopy);
-                        }}
+                        onClick={() => toggleColumnCollapse(header)}
                       >
                         {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
                       </span>
@@ -678,44 +722,11 @@ export function SimpleTable({
                           type="text"
                           placeholder="Filter"
                           value={columnFilters[header]}
-                          onChange={(e) => {
-                            const columnFiltersCopy = { ...columnFilters };
-                            columnFiltersCopy[header] = e.target.value;
-                            setColumnFilters(columnFiltersCopy);
-                          }}
+                          onChange={(e) => onColumnFilterChange(e, header)}
                         />
                         <button
                           type="button"
-                          onClick={() => {
-                            const uniqueValues = data[header].reduce(
-                              (result, element) => {
-                                var normalize = (x: any) =>
-                                  typeof x === "string" ? x.toLowerCase() : x;
-
-                                var normalizedElement = normalize(element);
-                                if (
-                                  result.every(
-                                    (otherElement) =>
-                                      normalize(otherElement) !==
-                                      normalizedElement
-                                  )
-                                ) {
-                                  result.push(element);
-                                }
-
-                                return result;
-                              },
-                              []
-                            );
-                            setSelectedRowValues(uniqueValues);
-                            setSelectedHeader(header);
-                            const isSelectedHeaderNumeric = !normalizedData
-                              .filter((entry) => Boolean(entry.values[i]))
-                              .some((entry) =>
-                                isNaN(toNumber(entry.values[i]))
-                              );
-                            setIsSelectedHeaderNumeric(isSelectedHeaderNumeric);
-                          }}
+                          onClick={() => setModalData(header, i)}
                         >
                           <svg
                             id="Icons"
