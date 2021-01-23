@@ -687,7 +687,27 @@ export function SimpleTable({
                         <button
                           type="button"
                           onClick={() => {
-                            setSelectedRowValues(data[header]);
+                            const uniqueValues = data[header].reduce(
+                              (result, element) => {
+                                var normalize = (x: any) =>
+                                  typeof x === "string" ? x.toLowerCase() : x;
+
+                                var normalizedElement = normalize(element);
+                                if (
+                                  result.every(
+                                    (otherElement) =>
+                                      normalize(otherElement) !==
+                                      normalizedElement
+                                  )
+                                ) {
+                                  result.push(element);
+                                }
+
+                                return result;
+                              },
+                              []
+                            );
+                            setSelectedRowValues(uniqueValues);
                             setSelectedHeader(header);
                             const isSelectedHeaderNumeric = !normalizedData
                               .filter((entry) => Boolean(entry.values[i]))
