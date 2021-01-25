@@ -121,7 +121,7 @@ const Tr = styled.tr<TrProps>`
   ${(props) =>
     props.separator &&
     css`
-      pointer-events: none;
+      cursor: pointer;
       background: #f2f2f2;
       font-weight: 600;
     `}
@@ -304,6 +304,9 @@ export function SimpleTable({
   const [isSelectedHeaderNumeric, setIsSelectedHeaderNumeric] = React.useState(
     false
   );
+  const [collapsedGroups, setCollapsedGroups] = React.useState<{
+    [dynamic: string]: boolean;
+  }>({});
 
   const originalData = JSON.parse(JSON.stringify(data));
 
@@ -352,6 +355,10 @@ export function SimpleTable({
       history.pushState(null, "", newRelativePathQuery);
     }
   }, [colFilters]);
+
+  React.useEffect(() => {
+    setCollapsedGroups({});
+  }, [groupBy]);
 
   if (columnsOrdering) {
     data = reorderISheetColumns(
@@ -606,6 +613,12 @@ export function SimpleTable({
     setIsSelectedHeaderNumeric(isSelectedHeaderNumeric);
   }
 
+  function onGroupClick(group: string) {
+    const collapsedGroupsCopy = { ...collapsedGroups };
+    collapsedGroupsCopy[group] = !collapsedGroups[group];
+    setCollapsedGroups(collapsedGroupsCopy);
+  }
+
   return (
     <>
       {selectedRowValues && (
@@ -750,8 +763,16 @@ export function SimpleTable({
                 return (
                   <React.Fragment key={i}>
                     {groupBy && i === 0 ? (
-                      <Tr separator>
+                      <Tr
+                        separator
+                        onClick={() => onGroupClick(row.values[groupByIndex])}
+                      >
                         <Td colSpan={columns.length}>
+                          {collapsedGroups[row.values[groupByIndex]] ? (
+                            <>&#x25B8;</>
+                          ) : (
+                            <>&#x25BE;</>
+                          )}{" "}
                           {row.values[groupByIndex]}
                         </Td>
                       </Tr>
@@ -760,34 +781,47 @@ export function SimpleTable({
                     i > 0 &&
                     normalizedData[i - 1].values[groupByIndex] !==
                       row.values[groupByIndex] ? (
-                      <Tr separator>
+                      <Tr
+                        separator
+                        onClick={() => onGroupClick(row.values[groupByIndex])}
+                      >
                         <Td colSpan={columns.length}>
+                          {collapsedGroups[row.values[groupByIndex]] ? (
+                            <>&#x25B8;</>
+                          ) : (
+                            <>&#x25BE;</>
+                          )}{" "}
                           {row.values[groupByIndex]}
                         </Td>
                       </Tr>
                     ) : null}
-                    <Tr
-                      key={`r${i}`}
-                      onClick={() => {
-                        const firstKey = Object.keys(originalData)[0];
-                        const dataKeys = Object.keys(data);
-                        const firstKeyIndex = dataKeys.findIndex(
-                          (x) => x === firstKey
-                        );
-                        onRowClick(row.values[firstKeyIndex]);
-                      }}
-                      highlight={selectedRows && selectedRows[row.values[0]]}
-                    >
-                      {row.values.map((field, j) => (
-                        <Td
-                          key={`${i}_${j}`}
-                          collapsed={collapsedColumns[columns[j]]}
-                          background={colors?.[columns[j]]?.[row.originalIndex]}
-                        >
-                          {field}
-                        </Td>
-                      ))}
-                    </Tr>
+                    {groupBy &&
+                    collapsedGroups[row.values[groupByIndex]] ? null : (
+                      <Tr
+                        key={`r${i}`}
+                        onClick={() => {
+                          const firstKey = Object.keys(originalData)[0];
+                          const dataKeys = Object.keys(data);
+                          const firstKeyIndex = dataKeys.findIndex(
+                            (x) => x === firstKey
+                          );
+                          onRowClick(row.values[firstKeyIndex]);
+                        }}
+                        highlight={selectedRows && selectedRows[row.values[0]]}
+                      >
+                        {row.values.map((field, j) => (
+                          <Td
+                            key={`${i}_${j}`}
+                            collapsed={collapsedColumns[columns[j]]}
+                            background={
+                              colors?.[columns[j]]?.[row.originalIndex]
+                            }
+                          >
+                            {field}
+                          </Td>
+                        ))}
+                      </Tr>
+                    )}
                   </React.Fragment>
                 );
               })}
