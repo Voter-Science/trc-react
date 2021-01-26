@@ -1,0 +1,42 @@
+# Test against the latest version of this Node.js version
+environment:
+  nodejs_version: "12"
+
+cache:
+  - '%APPDATA%\npm-cache'               # npm cache
+  
+# Install scripts. (runs after repo cloning)
+install:
+  # Get the latest stable version of Node.js or io.js
+  - ps: Install-Product node $env:nodejs_version  
+  
+# Post-install test scripts.
+test_script:
+  # Output useful info for debugging.
+  - node --version
+  - npm --version
+  # run tests
+  #- npm test  
+  
+artifacts:
+  - path: dist
+    name: TrcDeploy
+  
+  - path: '*.tgz'
+    name: TrcNpmPack
+    
+# Don't actually build.
+# build: off
+build_script:
+- ps: 
+    $data3 = [PSCustomObject]@{
+        repo = $env:APPVEYOR_REPO_NAME;
+        branch = $env:APPVEYOR_REPO_BRANCH ;
+        commit = $env:APPVEYOR_REPO_COMMIT;
+        timestamp=(Get-Date -Format "o");
+        htmlurl="https://github.com/" + $env:APPVEYOR_REPO_NAME + "/commit/" + $env:APPVEYOR_REPO_COMMIT;
+    };
+    $data3 | ConvertTo-Json | Set-Content -Path "dist\buildver.json"
+
+- npm run build    
+- npm pack
