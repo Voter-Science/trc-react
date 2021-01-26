@@ -28,6 +28,7 @@ artifacts:
 # Don't actually build.
 # build: off
 build_script:
+- npm run build    
 - ps: 
     $data3 = [PSCustomObject]@{
         repo = $env:APPVEYOR_REPO_NAME;
@@ -38,5 +39,4 @@ build_script:
     };
     $data3 | ConvertTo-Json | Set-Content -Path "dist\buildver.json"
 
-- npm run build    
 - npm pack
