@@ -317,45 +317,11 @@ export function SimpleTable({
     if (hashed) {
       const decoded = decodeURI(hashed);
       const toObject = JSON.parse(decoded);
-      setColumnFilters(toObject[tableIdentifier]);
+      setColumnFilters(toObject[tableIdentifier].cf);
+      setSorter(parseInt(toObject[tableIdentifier].s));
+      setSortingOrder(toObject[tableIdentifier].o);
     }
   }, []);
-
-  React.useEffect(() => {
-    const hasValues = columns.some((x) => columnFilters[x] !== "");
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const hashed = urlParams.get("TableFilters");
-    let currentQueryStringObject: { [dynamic: string]: any } = {};
-    if (hashed) {
-      const decoded = decodeURI(hashed);
-      currentQueryStringObject = JSON.parse(decoded);
-    }
-
-    if (hasValues) {
-      currentQueryStringObject[tableIdentifier] = columnFilters;
-      const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
-      const urlParams = new URLSearchParams(window.location.search);
-      urlParams.set("TableFilters", encoded);
-      const newRelativePathQuery = `${
-        window.location.pathname
-      }?${urlParams.toString()}`;
-      history.pushState(null, "", newRelativePathQuery);
-    } else {
-      let urlParams = new URLSearchParams(window.location.search);
-      delete currentQueryStringObject[tableIdentifier];
-      if (Object.keys(currentQueryStringObject).length === 0) {
-        urlParams.delete("TableFilters");
-      } else {
-        const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
-        urlParams.set("TableFilters", encoded);
-      }
-      const newRelativePathQuery = `${
-        window.location.pathname
-      }?${urlParams.toString()}`;
-      history.pushState(null, "", newRelativePathQuery);
-    }
-  }, [colFilters]);
 
   React.useEffect(() => {
     setCollapsedGroups({});
@@ -463,6 +429,45 @@ export function SimpleTable({
       setSorter(i);
     }
   }
+
+  React.useEffect(() => {
+    const hasValues = columns.some((x) => columnFilters[x] !== "");
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashed = urlParams.get("TableFilters");
+    let currentQueryStringObject: { [dynamic: string]: any } = {};
+    if (hashed) {
+      const decoded = decodeURI(hashed);
+      currentQueryStringObject = JSON.parse(decoded);
+    }
+
+    if (hasValues) {
+      currentQueryStringObject[tableIdentifier] = {};
+      currentQueryStringObject[tableIdentifier].cf = columnFilters;
+      currentQueryStringObject[tableIdentifier].s = sorter;
+      currentQueryStringObject[tableIdentifier].o = sortingOrder;
+      const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set("TableFilters", encoded);
+      const newRelativePathQuery = `${
+        window.location.pathname
+      }?${urlParams.toString()}`;
+      history.pushState(null, "", newRelativePathQuery);
+    } else {
+      let urlParams = new URLSearchParams(window.location.search);
+      delete currentQueryStringObject[tableIdentifier];
+      if (Object.keys(currentQueryStringObject).length === 0) {
+        urlParams.delete("TableFilters");
+      } else {
+        const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
+        urlParams.set("TableFilters", encoded);
+      }
+      const newRelativePathQuery = `${
+        window.location.pathname
+      }?${urlParams.toString()}`;
+      history.pushState(null, "", newRelativePathQuery);
+    }
+  }, [colFilters, sorter, sortingOrder]);
 
   if (!data) {
     return <p>No results.</p>;
