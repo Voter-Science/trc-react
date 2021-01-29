@@ -317,6 +317,16 @@ export function SimpleTable({
     if (hashed) {
       const decoded = decodeURI(hashed);
       const toObject = JSON.parse(decoded);
+      if (
+        Object.keys(toObject[tableIdentifier].cf).toString() !==
+        columns.toString()
+      ) {
+        const newRelativePathQuery = `${
+          window.location.href.replace(window.location.hash, "").split("?")[0]
+        }${window.location.hash}`;
+        history.pushState(null, "", newRelativePathQuery);
+        return;
+      }
       setColumnFilters(toObject[tableIdentifier].cf);
       setSorter(parseInt(toObject[tableIdentifier].s));
       setSortingOrder(toObject[tableIdentifier].o);
@@ -449,9 +459,11 @@ export function SimpleTable({
       const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
       const urlParams = new URLSearchParams(window.location.search);
       urlParams.set("TableFilters", encoded);
-      const newRelativePathQuery = `${
-        window.location.pathname
-      }?${urlParams.toString()}`;
+      console.log(window.location);
+      const newRelativePathQuery =
+        `${
+          window.location.href.replace(window.location.hash, "").split("?")[0]
+        }?${urlParams.toString()}` + window.location.hash;
       history.pushState(null, "", newRelativePathQuery);
     } else {
       let urlParams = new URLSearchParams(window.location.search);
@@ -462,9 +474,11 @@ export function SimpleTable({
         const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
         urlParams.set("TableFilters", encoded);
       }
-      const newRelativePathQuery = `${
-        window.location.pathname
-      }?${urlParams.toString()}`;
+      console.log(window.location);
+      const newRelativePathQuery =
+        `${
+          window.location.href.replace(window.location.hash, "").split("?")[0]
+        }?${urlParams.toString()}` + window.location.hash;
       history.pushState(null, "", newRelativePathQuery);
     }
   }, [colFilters, sorter, sortingOrder]);
