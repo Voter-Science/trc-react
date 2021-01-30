@@ -15,8 +15,9 @@ import reorderISheetColumns from "./utils/reorderISheetColumns";
 // Readonly.
 
 interface IProps {
-  data: ISheetContents;
   colors?: ISheetContents;
+  data: ISheetContents;
+  disableQueryString?: boolean;
   downloadIcon?: boolean;
   onRowClick?: (recId: string) => void;
   selectedRows?: { [dynamic: string]: boolean };
@@ -278,8 +279,9 @@ const NumericFilterLi = styled.li`
 `;
 
 export function SimpleTable({
-  data,
   colors,
+  data,
+  disableQueryString = false,
   downloadIcon,
   onRowClick,
   selectedRows,
@@ -312,24 +314,26 @@ export function SimpleTable({
   const originalData = JSON.parse(JSON.stringify(data));
 
   React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const hashed = urlParams.get("TableFilters");
-    if (hashed) {
-      const decoded = decodeURI(hashed);
-      const toObject = JSON.parse(decoded);
-      if (
-        Object.keys(toObject[tableIdentifier].cf).toString() !==
-        columns.toString()
-      ) {
-        const newRelativePathQuery = `${
-          window.location.href.replace(window.location.hash, "").split("?")[0]
-        }${window.location.hash}`;
-        history.pushState(null, "", newRelativePathQuery);
-        return;
+    if (!disableQueryString) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashed = urlParams.get("TableFilters");
+      if (hashed) {
+        const decoded = decodeURI(hashed);
+        const toObject = JSON.parse(decoded);
+        if (
+          Object.keys(toObject[tableIdentifier].cf).toString() !==
+          columns.toString()
+        ) {
+          const newRelativePathQuery = `${
+            window.location.href.replace(window.location.hash, "").split("?")[0]
+          }${window.location.hash}`;
+          history.pushState(null, "", newRelativePathQuery);
+          return;
+        }
+        setColumnFilters(toObject[tableIdentifier].cf);
+        setSorter(parseInt(toObject[tableIdentifier].s));
+        setSortingOrder(toObject[tableIdentifier].o);
       }
-      setColumnFilters(toObject[tableIdentifier].cf);
-      setSorter(parseInt(toObject[tableIdentifier].s));
-      setSortingOrder(toObject[tableIdentifier].o);
     }
   }, []);
 
@@ -441,45 +445,47 @@ export function SimpleTable({
   }
 
   React.useEffect(() => {
-    const hasValues = columns.some((x) => columnFilters[x] !== "");
+    if (!disableQueryString) {
+      const hasValues = columns.some((x) => columnFilters[x] !== "");
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const hashed = urlParams.get("TableFilters");
-    let currentQueryStringObject: { [dynamic: string]: any } = {};
-    if (hashed) {
-      const decoded = decodeURI(hashed);
-      currentQueryStringObject = JSON.parse(decoded);
-    }
-
-    if (hasValues) {
-      currentQueryStringObject[tableIdentifier] = {};
-      currentQueryStringObject[tableIdentifier].cf = columnFilters;
-      currentQueryStringObject[tableIdentifier].s = sorter;
-      currentQueryStringObject[tableIdentifier].o = sortingOrder;
-      const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
       const urlParams = new URLSearchParams(window.location.search);
-      urlParams.set("TableFilters", encoded);
-      console.log(window.location);
-      const newRelativePathQuery =
-        `${
-          window.location.href.replace(window.location.hash, "").split("?")[0]
-        }?${urlParams.toString()}` + window.location.hash;
-      history.pushState(null, "", newRelativePathQuery);
-    } else {
-      let urlParams = new URLSearchParams(window.location.search);
-      delete currentQueryStringObject[tableIdentifier];
-      if (Object.keys(currentQueryStringObject).length === 0) {
-        urlParams.delete("TableFilters");
-      } else {
-        const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
-        urlParams.set("TableFilters", encoded);
+      const hashed = urlParams.get("TableFilters");
+      let currentQueryStringObject: { [dynamic: string]: any } = {};
+      if (hashed) {
+        const decoded = decodeURI(hashed);
+        currentQueryStringObject = JSON.parse(decoded);
       }
-      console.log(window.location);
-      const newRelativePathQuery =
-        `${
-          window.location.href.replace(window.location.hash, "").split("?")[0]
-        }?${urlParams.toString()}` + window.location.hash;
-      history.pushState(null, "", newRelativePathQuery);
+
+      if (hasValues) {
+        currentQueryStringObject[tableIdentifier] = {};
+        currentQueryStringObject[tableIdentifier].cf = columnFilters;
+        currentQueryStringObject[tableIdentifier].s = sorter;
+        currentQueryStringObject[tableIdentifier].o = sortingOrder;
+        const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set("TableFilters", encoded);
+        console.log(window.location);
+        const newRelativePathQuery =
+          `${
+            window.location.href.replace(window.location.hash, "").split("?")[0]
+          }?${urlParams.toString()}` + window.location.hash;
+        history.pushState(null, "", newRelativePathQuery);
+      } else {
+        let urlParams = new URLSearchParams(window.location.search);
+        delete currentQueryStringObject[tableIdentifier];
+        if (Object.keys(currentQueryStringObject).length === 0) {
+          urlParams.delete("TableFilters");
+        } else {
+          const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
+          urlParams.set("TableFilters", encoded);
+        }
+        console.log(window.location);
+        const newRelativePathQuery =
+          `${
+            window.location.href.replace(window.location.hash, "").split("?")[0]
+          }?${urlParams.toString()}` + window.location.hash;
+        history.pushState(null, "", newRelativePathQuery);
+      }
     }
   }, [colFilters, sorter, sortingOrder]);
 
