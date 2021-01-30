@@ -16,6 +16,7 @@ import reorderISheetColumns from "./utils/reorderISheetColumns";
 
 interface IProps {
   colors?: ISheetContents;
+  customColumn?: React.ReactNode;
   data: ISheetContents;
   disableQueryString?: boolean;
   downloadIcon?: boolean;
@@ -138,9 +139,9 @@ const Tr = styled.tr<TrProps>`
 `;
 
 const Th = styled.th<{
-  isSorter: boolean;
-  sortingOrder: string;
-  columnFiltering: boolean;
+  isSorter?: boolean;
+  sortingOrder?: string;
+  columnFiltering?: boolean;
   collapsed?: boolean;
 }>`
   background: #6485ff;
@@ -280,6 +281,7 @@ const NumericFilterLi = styled.li`
 
 export function SimpleTable({
   colors,
+  customColumn,
   data,
   disableQueryString = false,
   downloadIcon,
@@ -464,7 +466,6 @@ export function SimpleTable({
         const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.set("TableFilters", encoded);
-        console.log(window.location);
         const newRelativePathQuery =
           `${
             window.location.href.replace(window.location.hash, "").split("?")[0]
@@ -479,7 +480,6 @@ export function SimpleTable({
           const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
           urlParams.set("TableFilters", encoded);
         }
-        console.log(window.location);
         const newRelativePathQuery =
           `${
             window.location.href.replace(window.location.hash, "").split("?")[0]
@@ -724,6 +724,7 @@ export function SimpleTable({
           <Table>
             <thead>
               <Tr>
+                {customColumn && <Th />}
                 {headers.map((header, i) => (
                   <Th
                     key={header}
@@ -835,6 +836,7 @@ export function SimpleTable({
                         }}
                         highlight={selectedRows && selectedRows[row.values[0]]}
                       >
+                        {customColumn && <Td>{customColumn}</Td>}
                         {row.values.map((field, j) => (
                           <Td
                             key={`${i}_${j}`}
