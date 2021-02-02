@@ -21,6 +21,7 @@ interface IProps {
   disableQueryString?: boolean;
   downloadIcon?: boolean;
   onRowClick?: (recId: string) => void;
+  rowIdentifier?: number;
   selectedRows?: { [dynamic: string]: boolean };
   defaultSortBy?: string;
   columnsOrdering?: string[];
@@ -286,6 +287,7 @@ export function SimpleTable({
   disableQueryString = false,
   downloadIcon,
   onRowClick,
+  rowIdentifier = 0,
   selectedRows,
   defaultSortBy,
   columnsOrdering,
@@ -827,7 +829,7 @@ export function SimpleTable({
                       <Tr
                         key={`r${i}`}
                         onClick={() => {
-                          const firstKey = Object.keys(originalData)[0];
+                          const firstKey = Object.keys(originalData)[rowIdentifier];
                           const dataKeys = Object.keys(data);
                           const firstKeyIndex = dataKeys.findIndex(
                             (x) => x === firstKey
