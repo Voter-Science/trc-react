@@ -5,16 +5,17 @@ interface IProps {
   close(): void;
   children: any;
   maxWidth?: string;
+  zIndex?: number;
 }
 
-const Scroller = styled.div`
+const Scroller = styled.div<{ zIndex: number }>`
   overflow-y: auto;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   top: 0;
-  z-index: 50;
+  z-index: ${(props) => props.zIndex};
   transform: translate3d(0, 0, 0);
 `;
 
@@ -45,9 +46,14 @@ const Close = styled.button`
   padding: 3px 10px;
 `;
 
-export default ({ close, children, maxWidth = "35rem" }: IProps) => {
+export default ({
+  close,
+  children,
+  maxWidth = "35rem",
+  zIndex = 50,
+}: IProps) => {
   return (
-    <Scroller>
+    <Scroller zIndex={zIndex}>
       <Wrapper>
         <Content maxWidth={maxWidth}>
           <Close onClick={close}>Close</Close>
