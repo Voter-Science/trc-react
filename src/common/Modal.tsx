@@ -4,6 +4,7 @@ import styled from "@emotion/styled";
 interface IProps {
   close(): void;
   children: any;
+  maxWidth?: string;
 }
 
 const Scroller = styled.div`
@@ -26,11 +27,11 @@ const Wrapper = styled.div`
   min-height: 100%;
 `;
 
-const Content = styled.div`
+const Content = styled.div<{ maxWidth: string }>`
   background: #fff;
   padding: 2rem;
   position: relative;
-  max-width: 35rem;
+  max-width: ${(props) => props.maxWidth};
 `;
 
 const Close = styled.button`
@@ -44,15 +45,13 @@ const Close = styled.button`
   padding: 3px 10px;
 `;
 
-export default ({ close, children }: IProps) => {
+export default ({ close, children, maxWidth = "35rem" }: IProps) => {
   return (
     <Scroller>
       <Wrapper>
-        <Content>
+        <Content maxWidth={maxWidth}>
           <Close onClick={close}>Close</Close>
-          <div>
-            {children}
-          </div>
+          <div>{children}</div>
         </Content>
       </Wrapper>
     </Scroller>
