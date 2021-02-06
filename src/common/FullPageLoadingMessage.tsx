@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 interface IProps {
   title?: string;
   message?: string;
+  zIndex?: number;
 }
 
 const dots = keyframes`
@@ -13,7 +14,7 @@ const dots = keyframes`
   66% { content: '...'; }
 `;
 
-const Container = styled.div`
+const Container = styled.div<{ zIndex: number }>`
   align-items: center;
   background: rgba(0, 0, 0, 0.75);
   bottom: 0;
@@ -25,7 +26,7 @@ const Container = styled.div`
   position: fixed;
   right: 0;
   top: 0;
-  z-index: 100;
+  z-index: ${(props) => props.zIndex};
 `;
 
 const MainMessage = styled.p`
@@ -44,9 +45,13 @@ const SecondaryMessage = styled.p`
   font-size: 13px;
 `;
 
-export function FullPageLoadingMessage({ title, message }: IProps) {
+export function FullPageLoadingMessage({
+  title,
+  message,
+  zIndex = 100,
+}: IProps) {
   return (
-    <Container>
+    <Container zIndex={zIndex}>
       <MainMessage>{title || "Loading data"}</MainMessage>
       <SecondaryMessage>
         {message || "Please wait, this could take up to 30 seconds."}
