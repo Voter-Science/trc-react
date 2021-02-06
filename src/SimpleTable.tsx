@@ -6,6 +6,7 @@ import { SheetContents, ISheetContents } from "trc-sheet/sheetContents";
 
 import { Button } from "./common/Button";
 import { HorizontalList } from "./common/HorizontalList";
+import { Grid } from "./common/Grid";
 import Modal from "./common/Modal";
 import { DownloadCsv } from "./DownloadCsv";
 
@@ -363,6 +364,12 @@ export function SimpleTable({
           if (!filter) {
             return;
           }
+          if (filter === "[blank]") {
+            if (!entry) {
+              allIndexes.push(index);
+            }
+            return;
+          }
           // test for numeric filter
           if (filter.includes("<>")) {
             const numericFilters = filter.split("<>");
@@ -597,6 +604,13 @@ export function SimpleTable({
     }
   }
 
+  function showBlanks() {
+    const columnFiltersCopy = { ...columnFilters };
+    columnFiltersCopy[selectedHeader] = "[blank]";
+    setColumnFilters(columnFiltersCopy);
+    setSelectedRowValues(null);
+  }
+
   function clearFilters() {
     const columnFiltersCopy = { ...columnFilters };
     columns.forEach((col) => (columnFiltersCopy[col] = ""));
@@ -672,12 +686,15 @@ export function SimpleTable({
               </>
             )}
           </RowValueSelector>
-          <HorizontalList alignRight>
-            <Button secondary onClick={clearFilter}>
-              Clear
-            </Button>
-            <Button onClick={applyColumnFilter}>Apply</Button>
-          </HorizontalList>
+          <Grid>
+            <Button onClick={showBlanks}>Show blanks</Button>
+            <HorizontalList alignRight>
+              <Button secondary onClick={clearFilter}>
+                Clear
+              </Button>
+              <Button onClick={applyColumnFilter}>Apply</Button>
+            </HorizontalList>
+          </Grid>
         </Modal>
       )}
       <FullScreenWrapper fullScreen={fullScreen}>
@@ -829,7 +846,9 @@ export function SimpleTable({
                       <Tr
                         key={`r${i}`}
                         onClick={() => {
-                          const firstKey = Object.keys(originalData)[rowIdentifier];
+                          const firstKey = Object.keys(originalData)[
+                            rowIdentifier
+                          ];
                           const dataKeys = Object.keys(data);
                           const firstKeyIndex = dataKeys.findIndex(
                             (x) => x === firstKey
