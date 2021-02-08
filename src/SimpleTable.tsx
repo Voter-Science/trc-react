@@ -541,7 +541,7 @@ export function SimpleTable({
     });
   } else {
     normalizedData.sort((a, b) => {
-      return a.values[sorter] < b.values[sorter]
+      return a.values[sorter].toLowerCase() < b.values[sorter].toLowerCase()
         ? sortingOrder === "ASC"
           ? -1
           : 1
@@ -825,8 +825,10 @@ export function SimpleTable({
                     ) : null}
                     {groupBy &&
                     i > 0 &&
-                    normalizedData[i - 1].values[groupByIndex] !==
-                      row.values[groupByIndex] ? (
+                    normalizedData[i - 1].values[
+                      groupByIndex
+                    ]?.toLowerCase() !==
+                      row.values[groupByIndex]?.toLowerCase() ? (
                       <Tr
                         separator
                         onClick={() => onGroupClick(row.values[groupByIndex])}
