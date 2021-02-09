@@ -364,8 +364,14 @@ export function SimpleTable({
           if (!filter) {
             return;
           }
-          if (filter === "[blank]") {
+          if (filter === "[+blank]") {
             if (!entry) {
+              allIndexes.push(index);
+            }
+            return;
+          }
+          if (filter === "[-blank]") {
+            if (entry) {
               allIndexes.push(index);
             }
             return;
@@ -570,6 +576,16 @@ export function SimpleTable({
   }
 
   function applyColumnFilter() {
+    const blank = (filter: string) => {
+      const blankInput: HTMLInputElement = document.querySelector(
+        "#filterBlanks"
+      );
+      if (blankInput.checked) {
+        return filter ? filter : "[+blank]";
+      } else {
+        return filter ? filter : "[-blank]";
+      }
+    };
     if (!isSelectedHeaderNumeric) {
       const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
         "#rowsSelector input"
@@ -583,7 +599,7 @@ export function SimpleTable({
         }
       });
       const columnFiltersCopy = { ...columnFilters };
-      columnFiltersCopy[selectedHeader] = searchString;
+      columnFiltersCopy[selectedHeader] = blank(searchString);
       setColumnFilters(columnFiltersCopy);
       setSelectedRowValues(null);
     } else {
@@ -598,7 +614,7 @@ export function SimpleTable({
       if (!greaterThan && lessThan) customFilter = lessThan + "<>";
       if (greaterThan && lessThan) customFilter = `${lessThan}<>${greaterThan}`;
       const columnFiltersCopy = { ...columnFilters };
-      columnFiltersCopy[selectedHeader] = customFilter;
+      columnFiltersCopy[selectedHeader] = blank(customFilter);
       setColumnFilters(columnFiltersCopy);
       setSelectedRowValues(null);
     }
@@ -606,7 +622,7 @@ export function SimpleTable({
 
   function showBlanks() {
     const columnFiltersCopy = { ...columnFilters };
-    columnFiltersCopy[selectedHeader] = "[blank]";
+    columnFiltersCopy[selectedHeader] = "[+blank]";
     setColumnFilters(columnFiltersCopy);
     setSelectedRowValues(null);
   }
@@ -688,7 +704,10 @@ export function SimpleTable({
             )}
           </RowValueSelector>
           <Grid>
-            <Button onClick={showBlanks}>Show blanks</Button>
+            {/* <Button onClick={showBlanks}>Show blanks</Button> */}
+            <div>
+              <input type="checkbox" id="filterBlanks" /> Show blanks
+            </div>
             <HorizontalList alignRight>
               <Button secondary onClick={clearFilter}>
                 Clear
@@ -815,7 +834,9 @@ export function SimpleTable({
                         onClick={() => onGroupClick(row.values[groupByIndex])}
                       >
                         <Td colSpan={columns.length}>
-                          {collapsedGroups[row.values[groupByIndex].toLowerCase()] ? (
+                          {collapsedGroups[
+                            row.values[groupByIndex].toLowerCase()
+                          ] ? (
                             <>&#x25B8;</>
                           ) : (
                             <>&#x25BE;</>
@@ -835,7 +856,9 @@ export function SimpleTable({
                         onClick={() => onGroupClick(row.values[groupByIndex])}
                       >
                         <Td colSpan={columns.length}>
-                          {collapsedGroups[row.values[groupByIndex].toLowerCase()] ? (
+                          {collapsedGroups[
+                            row.values[groupByIndex].toLowerCase()
+                          ] ? (
                             <>&#x25B8;</>
                           ) : (
                             <>&#x25BE;</>
@@ -845,7 +868,9 @@ export function SimpleTable({
                       </Tr>
                     ) : null}
                     {groupBy &&
-                    collapsedGroups[row.values[groupByIndex].toLowerCase()] ? null : (
+                    collapsedGroups[
+                      row.values[groupByIndex].toLowerCase()
+                    ] ? null : (
                       <Tr
                         key={`r${i}`}
                         onClick={() => {
