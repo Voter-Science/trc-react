@@ -664,7 +664,7 @@ export function SimpleTable({
   return (
     <>
       {selectedRowValues && (
-        <Modal close={() => setSelectedRowValues(null)}>
+        <Modal close={() => setSelectedRowValues(null)} zIndex={10000}>
           <RowValueSelector id="rowsSelector">
             {!isSelectedHeaderNumeric ? (
               selectedRowValues.map((rowValue) => (
