@@ -657,14 +657,15 @@ export function SimpleTable({
 
   function onGroupClick(group: string) {
     const collapsedGroupsCopy = { ...collapsedGroups };
-    collapsedGroupsCopy[group] = !collapsedGroups[group];
+    const key = group.toLocaleLowerCase();
+    collapsedGroupsCopy[key] = !collapsedGroups[key];
     setCollapsedGroups(collapsedGroupsCopy);
   }
 
   return (
     <>
       {selectedRowValues && (
-        <Modal close={() => setSelectedRowValues(null)}>
+        <Modal close={() => setSelectedRowValues(null)} zIndex={10000}>
           <RowValueSelector id="rowsSelector">
             {!isSelectedHeaderNumeric ? (
               selectedRowValues.map((rowValue) => (
@@ -814,7 +815,7 @@ export function SimpleTable({
                         onClick={() => onGroupClick(row.values[groupByIndex])}
                       >
                         <Td colSpan={columns.length}>
-                          {collapsedGroups[row.values[groupByIndex]] ? (
+                          {collapsedGroups[row.values[groupByIndex].toLowerCase()] ? (
                             <>&#x25B8;</>
                           ) : (
                             <>&#x25BE;</>
@@ -834,7 +835,7 @@ export function SimpleTable({
                         onClick={() => onGroupClick(row.values[groupByIndex])}
                       >
                         <Td colSpan={columns.length}>
-                          {collapsedGroups[row.values[groupByIndex]] ? (
+                          {collapsedGroups[row.values[groupByIndex].toLowerCase()] ? (
                             <>&#x25B8;</>
                           ) : (
                             <>&#x25BE;</>
@@ -844,7 +845,7 @@ export function SimpleTable({
                       </Tr>
                     ) : null}
                     {groupBy &&
-                    collapsedGroups[row.values[groupByIndex]] ? null : (
+                    collapsedGroups[row.values[groupByIndex].toLowerCase()] ? null : (
                       <Tr
                         key={`r${i}`}
                         onClick={() => {
