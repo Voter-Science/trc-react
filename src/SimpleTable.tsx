@@ -586,7 +586,22 @@ export function SimpleTable({
         return filter ? filter : "[-blank]";
       }
     };
-    if (!isSelectedHeaderNumeric) {
+    if (isSelectedHeaderNumeric && selectedRowValues.length > 10) {
+      const greaterThan = document.querySelector<HTMLInputElement>(
+        "#filterGreaterThan"
+      ).value;
+      const lessThan = document.querySelector<HTMLInputElement>(
+        "#filterLessThan"
+      ).value;
+      let customFilter = "";
+      if (greaterThan) customFilter = "<>" + greaterThan;
+      if (!greaterThan && lessThan) customFilter = lessThan + "<>";
+      if (greaterThan && lessThan) customFilter = `${lessThan}<>${greaterThan}`;
+      const columnFiltersCopy = { ...columnFilters };
+      columnFiltersCopy[selectedHeader] = blank(customFilter);
+      setColumnFilters(columnFiltersCopy);
+      setSelectedRowValues(null);
+    } else {
       const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
         "#rowsSelector input"
       );
@@ -602,29 +617,7 @@ export function SimpleTable({
       columnFiltersCopy[selectedHeader] = blank(searchString);
       setColumnFilters(columnFiltersCopy);
       setSelectedRowValues(null);
-    } else {
-      const greaterThan = document.querySelector<HTMLInputElement>(
-        "#filterGreaterThan"
-      ).value;
-      const lessThan = document.querySelector<HTMLInputElement>(
-        "#filterLessThan"
-      ).value;
-      let customFilter = "";
-      if (greaterThan) customFilter = "<>" + greaterThan;
-      if (!greaterThan && lessThan) customFilter = lessThan + "<>";
-      if (greaterThan && lessThan) customFilter = `${lessThan}<>${greaterThan}`;
-      const columnFiltersCopy = { ...columnFilters };
-      columnFiltersCopy[selectedHeader] = blank(customFilter);
-      setColumnFilters(columnFiltersCopy);
-      setSelectedRowValues(null);
     }
-  }
-
-  function showBlanks() {
-    const columnFiltersCopy = { ...columnFilters };
-    columnFiltersCopy[selectedHeader] = "[+blank]";
-    setColumnFilters(columnFiltersCopy);
-    setSelectedRowValues(null);
   }
 
   function clearFilters() {
@@ -683,14 +676,7 @@ export function SimpleTable({
       {selectedRowValues && (
         <Modal close={() => setSelectedRowValues(null)} zIndex={10000}>
           <RowValueSelector id="rowsSelector">
-            {!isSelectedHeaderNumeric ? (
-              selectedRowValues.map((rowValue) => (
-                <li key={rowValue}>
-                  <input type="checkbox" value={rowValue} />
-                  {rowValue}
-                </li>
-              ))
-            ) : (
+            {isSelectedHeaderNumeric && selectedRowValues.length > 10 ? (
               <>
                 <NumericFilterLi>
                   <span>Greater than:</span>{" "}
@@ -701,10 +687,16 @@ export function SimpleTable({
                   <input type="number" id="filterLessThan" />
                 </NumericFilterLi>
               </>
+            ) : (
+              selectedRowValues.map((rowValue) => (
+                <li key={rowValue}>
+                  <input type="checkbox" value={rowValue} />
+                  {rowValue}
+                </li>
+              ))
             )}
           </RowValueSelector>
           <Grid>
-            {/* <Button onClick={showBlanks}>Show blanks</Button> */}
             <div>
               <input type="checkbox" id="filterBlanks" /> Show blanks
             </div>
