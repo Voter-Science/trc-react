@@ -307,6 +307,7 @@ export function SimpleTable({
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
   const [collapsedColumns, setCollapsedColumns] = React.useState(colExpanded);
   const [groupBy, setGroupBy] = React.useState("");
+  const [hasBlanks, setHasBlanks] = React.useState(false);
   const [selectedRowValues, setSelectedRowValues] = React.useState<any[]>(null);
   const [selectedHeader, setSelectedHeader] = React.useState("");
   const [isSelectedHeaderNumeric, setIsSelectedHeaderNumeric] = React.useState(
@@ -639,6 +640,7 @@ export function SimpleTable({
   }
 
   function setModalData(header: string, i: number) {
+    const hasBlanks = data[header].some((x) => !x);
     const uniqueValues = data[header]
       .reduce((result, element) => {
         var normalize = (x: any) =>
@@ -661,6 +663,7 @@ export function SimpleTable({
       });
     setSelectedRowValues(uniqueValues);
     setSelectedHeader(header);
+    setHasBlanks(hasBlanks);
     const isSelectedHeaderNumeric = !normalizedData
       .filter((entry) => Boolean(entry.values[i]))
       .some((entry) => isNaN(toNumber(entry.values[i])));
@@ -678,24 +681,28 @@ export function SimpleTable({
     <>
       {selectedRowValues && (
         <Modal close={() => setSelectedRowValues(null)} zIndex={10000}>
-          {!(isSelectedHeaderNumeric && selectedRowValues.length > 10) && (
-            <div>
-              <input
-                type="checkbox"
-                onChange={(e) => {
-                  const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
-                    "#rowsSelector input"
-                  );
-                  rows.forEach((row) => {
-                    row.checked = e.target.checked;
-                  });
-                }}
-              />{" "}
-              Select all
-            </div>
-          )}
           <div style={{ marginBottom: "1.5rem" }}>
-            <input type="checkbox" id="filterBlanks" /> (show blanks)
+            {!(isSelectedHeaderNumeric && selectedRowValues.length > 10) && (
+              <div>
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
+                      "#rowsSelector input"
+                    );
+                    rows.forEach((row) => {
+                      row.checked = e.target.checked;
+                    });
+                  }}
+                />{" "}
+                Select all
+              </div>
+            )}
+            {hasBlanks && (
+              <div>
+                <input type="checkbox" id="filterBlanks" /> (show blanks)
+              </div>
+            )}
           </div>
 
           <RowValueSelector id="rowsSelector">
