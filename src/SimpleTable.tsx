@@ -655,7 +655,10 @@ export function SimpleTable({
 
         return result;
       }, [])
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort((a, b) => {
+        return a < b ? -1 : 1;
+      });
     setSelectedRowValues(uniqueValues);
     setSelectedHeader(header);
     const isSelectedHeaderNumeric = !normalizedData
