@@ -675,6 +675,26 @@ export function SimpleTable({
     <>
       {selectedRowValues && (
         <Modal close={() => setSelectedRowValues(null)} zIndex={10000}>
+          {!(isSelectedHeaderNumeric && selectedRowValues.length > 10) && (
+            <div>
+              <input
+                type="checkbox"
+                onChange={(e) => {
+                  const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
+                    "#rowsSelector input"
+                  );
+                  rows.forEach((row) => {
+                    row.checked = e.target.checked;
+                  });
+                }}
+              />{" "}
+              Select all
+            </div>
+          )}
+          <div style={{ marginBottom: "1.5rem" }}>
+            <input type="checkbox" id="filterBlanks" /> (show blanks)
+          </div>
+
           <RowValueSelector id="rowsSelector">
             {isSelectedHeaderNumeric && selectedRowValues.length > 10 ? (
               <>
@@ -696,17 +716,13 @@ export function SimpleTable({
               ))
             )}
           </RowValueSelector>
-          <Grid>
-            <div>
-              <input type="checkbox" id="filterBlanks" /> Show blanks
-            </div>
-            <HorizontalList alignRight>
-              <Button secondary onClick={clearFilter}>
-                Clear
-              </Button>
-              <Button onClick={applyColumnFilter}>Apply</Button>
-            </HorizontalList>
-          </Grid>
+
+          <HorizontalList alignRight>
+            <Button secondary onClick={clearFilter}>
+              Clear
+            </Button>
+            <Button onClick={applyColumnFilter}>Apply</Button>
+          </HorizontalList>
         </Modal>
       )}
       <FullScreenWrapper fullScreen={fullScreen}>
