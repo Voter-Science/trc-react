@@ -307,6 +307,7 @@ export function SimpleTable({
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
   const [collapsedColumns, setCollapsedColumns] = React.useState(colExpanded);
   const [groupBy, setGroupBy] = React.useState("");
+  const [hasBlanks, setHasBlanks] = React.useState(false);
   const [selectedRowValues, setSelectedRowValues] = React.useState<any[]>(null);
   const [selectedHeader, setSelectedHeader] = React.useState("");
   const [isSelectedHeaderNumeric, setIsSelectedHeaderNumeric] = React.useState(
@@ -586,7 +587,22 @@ export function SimpleTable({
         return filter ? filter : "[-blank]";
       }
     };
-    if (!isSelectedHeaderNumeric) {
+    if (isSelectedHeaderNumeric && selectedRowValues.length > 10) {
+      const greaterThan = document.querySelector<HTMLInputElement>(
+        "#filterGreaterThan"
+      ).value;
+      const lessThan = document.querySelector<HTMLInputElement>(
+        "#filterLessThan"
+      ).value;
+      let customFilter = "";
+      if (greaterThan) customFilter = "<>" + greaterThan;
+      if (!greaterThan && lessThan) customFilter = lessThan + "<>";
+      if (greaterThan && lessThan) customFilter = `${lessThan}<>${greaterThan}`;
+      const columnFiltersCopy = { ...columnFilters };
+      columnFiltersCopy[selectedHeader] = blank(customFilter);
+      setColumnFilters(columnFiltersCopy);
+      setSelectedRowValues(null);
+    } else {
       const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
         "#rowsSelector input"
       );
@@ -602,29 +618,7 @@ export function SimpleTable({
       columnFiltersCopy[selectedHeader] = blank(searchString);
       setColumnFilters(columnFiltersCopy);
       setSelectedRowValues(null);
-    } else {
-      const greaterThan = document.querySelector<HTMLInputElement>(
-        "#filterGreaterThan"
-      ).value;
-      const lessThan = document.querySelector<HTMLInputElement>(
-        "#filterLessThan"
-      ).value;
-      let customFilter = "";
-      if (greaterThan) customFilter = "<>" + greaterThan;
-      if (!greaterThan && lessThan) customFilter = lessThan + "<>";
-      if (greaterThan && lessThan) customFilter = `${lessThan}<>${greaterThan}`;
-      const columnFiltersCopy = { ...columnFilters };
-      columnFiltersCopy[selectedHeader] = blank(customFilter);
-      setColumnFilters(columnFiltersCopy);
-      setSelectedRowValues(null);
     }
-  }
-
-  function showBlanks() {
-    const columnFiltersCopy = { ...columnFilters };
-    columnFiltersCopy[selectedHeader] = "[+blank]";
-    setColumnFilters(columnFiltersCopy);
-    setSelectedRowValues(null);
   }
 
   function clearFilters() {
@@ -646,6 +640,7 @@ export function SimpleTable({
   }
 
   function setModalData(header: string, i: number) {
+    const hasBlanks = data[header].some((x) => !x);
     const uniqueValues = data[header]
       .reduce((result, element) => {
         var normalize = (x: any) =>
@@ -662,9 +657,13 @@ export function SimpleTable({
 
         return result;
       }, [])
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort((a, b) => {
+        return a < b ? -1 : 1;
+      });
     setSelectedRowValues(uniqueValues);
     setSelectedHeader(header);
+    setHasBlanks(hasBlanks);
     const isSelectedHeaderNumeric = !normalizedData
       .filter((entry) => Boolean(entry.values[i]))
       .some((entry) => isNaN(toNumber(entry.values[i])));
@@ -682,15 +681,32 @@ export function SimpleTable({
     <>
       {selectedRowValues && (
         <Modal close={() => setSelectedRowValues(null)} zIndex={10000}>
+          <div style={{ marginBottom: "1.5rem" }}>
+            {!(isSelectedHeaderNumeric && selectedRowValues.length > 10) && (
+              <div>
+                <input
+                  type="checkbox"
+                  onChange={(e) => {
+                    const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
+                      "#rowsSelector input"
+                    );
+                    rows.forEach((row) => {
+                      row.checked = e.target.checked;
+                    });
+                  }}
+                />{" "}
+                Select all
+              </div>
+            )}
+            {hasBlanks && (
+              <div>
+                <input type="checkbox" id="filterBlanks" /> (show blanks)
+              </div>
+            )}
+          </div>
+
           <RowValueSelector id="rowsSelector">
-            {!isSelectedHeaderNumeric ? (
-              selectedRowValues.map((rowValue) => (
-                <li key={rowValue}>
-                  <input type="checkbox" value={rowValue} />
-                  {rowValue}
-                </li>
-              ))
-            ) : (
+            {isSelectedHeaderNumeric && selectedRowValues.length > 10 ? (
               <>
                 <NumericFilterLi>
                   <span>Greater than:</span>{" "}
@@ -701,20 +717,22 @@ export function SimpleTable({
                   <input type="number" id="filterLessThan" />
                 </NumericFilterLi>
               </>
+            ) : (
+              selectedRowValues.map((rowValue) => (
+                <li key={rowValue}>
+                  <input type="checkbox" value={rowValue} />
+                  {rowValue}
+                </li>
+              ))
             )}
           </RowValueSelector>
-          <Grid>
-            {/* <Button onClick={showBlanks}>Show blanks</Button> */}
-            <div>
-              <input type="checkbox" id="filterBlanks" /> Show blanks
-            </div>
-            <HorizontalList alignRight>
-              <Button secondary onClick={clearFilter}>
-                Clear
-              </Button>
-              <Button onClick={applyColumnFilter}>Apply</Button>
-            </HorizontalList>
-          </Grid>
+
+          <HorizontalList alignRight>
+            <Button secondary onClick={clearFilter}>
+              Clear
+            </Button>
+            <Button onClick={applyColumnFilter}>Apply</Button>
+          </HorizontalList>
         </Modal>
       )}
       <FullScreenWrapper fullScreen={fullScreen}>
