@@ -581,6 +581,9 @@ export function SimpleTable({
       const blankInput: HTMLInputElement = document.querySelector(
         "#filterBlanks"
       );
+      if (!blankInput) {
+        return filter;
+      }
       if (blankInput.checked) {
         return filter ? filter : "[+blank]";
       } else {
