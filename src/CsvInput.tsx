@@ -1,11 +1,12 @@
-import * as React from 'react';
+import * as React from "react";
+import { parse } from "papaparse";
 
-import { SheetContents, ISheetContents } from 'trc-sheet/sheetContents';
-import { SimpleTable } from './SimpleTable';
+import { ISheetContents } from "trc-sheet/sheetContents";
+import { SimpleTable } from "./SimpleTable";
 
-import { Button } from './common/Button';
-import { HorizontalList } from './common/HorizontalList';
-import { TextareaInput } from './common/TextareaInput';
+import { Button } from "./common/Button";
+import { HorizontalList } from "./common/HorizontalList";
+import { TextareaInput } from "./common/TextareaInput";
 
 // Generic control for accepting raw text input, parsing it, and rendering as a table.
 // Caller hooks OnSubmit() to determine what to do with it.
@@ -32,41 +33,34 @@ export class CsvInput extends React.Component<IProps, IState> {
 
     this.onBack = this.onBack.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
+    this.apply = this.apply.bind(this);
 
     this.handleChange = this.handleChange.bind(this);
   }
 
   static parseCsv(text: string): ISheetContents {
-    var lines: string[] = text
-      .replace(/\r\n/g, "\r")
-      .replace(/\n/g, "\r")
-      .split(/\r/);
+    const lines: any = parse(text, { delimitersToGuess: ["\t", ","] }).data;
+    const names: string[] = lines[0];
+    const cols: any[] = [];
 
-    var header: string = lines[0];
-
-    var names: string[] = header.split(",");
-
-    var cols: any[] = [];
-
-    var x: ISheetContents = {};
+    let x: ISheetContents = {};
     names.forEach((name) => {
-      var col: string[] = [];
+      const col: string[] = [];
       cols.push(col);
       x[name.trim()] = col;
     });
 
-    for (var i = 1; i < lines.length; i++) {
-      var line = lines[i];
-      if (line.length == 0) {
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i].length == 0) {
         continue;
       }
-      var parts = line.split(",");
+      const parts = lines[i];
       if (parts.length != names.length) {
-        throw "Parser error at line " + i + ": " + line;
+        throw "Parser error at line " + i + ": " + lines[i];
       }
 
-      for (var j = 0; j < names.length; j++) {
-        var col = cols[j];
+      for (let j = 0; j < names.length; j++) {
+        const col = cols[j];
         col.push(parts[j].trim());
       }
     }
@@ -76,24 +70,27 @@ export class CsvInput extends React.Component<IProps, IState> {
 
   // Parse the raw text.
   private onParse() {
-    var x: ISheetContents;
     try {
-      x = CsvInput.parseCsv(this.state.rawText);
+      const x = CsvInput.parseCsv(this.state.rawText);
 
       if (this.props.onValidate) {
         this.props.onValidate(x);
       }
+
+      this.setState({ data: x });
     } catch (err) {
       alert(err);
-      return;
     }
-
-    this.setState({ data: x });
   }
 
   // When displaying table, go back to raw text.
   private onBack() {
     this.setState({ data: null });
+  }
+
+  private apply() {
+    console.log("apply");
+    console.log(parse(this.state.rawText));
   }
 
   private onSubmit() {
@@ -114,7 +111,7 @@ export class CsvInput extends React.Component<IProps, IState> {
       // Successfully parsed and validated.
       return (
         <>
-          <SimpleTable data={this.state.data} />
+          <SimpleTable data={this.state.data} disableQueryString />
           <HorizontalList alignRight>
             <Button onClick={this.onBack} secondary>
               Back
