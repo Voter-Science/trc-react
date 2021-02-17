@@ -1,12 +1,13 @@
-import * as React from 'react';
+import * as React from "react";
 
-import { SheetContents, ISheetContents } from 'trc-sheet/sheetContents';
+import { SheetContents, ISheetContents } from "trc-sheet/sheetContents";
 
-import TRCContext from './context/TRCContext';
+import TRCContext from "./context/TRCContext";
 
-import { Copy } from './common/Copy';
-import { CsvInput } from './CsvInput';
-import { PluginLink } from './PluginLink';
+import { Copy } from "./common/Copy";
+import { CsvInput } from "./CsvInput";
+import { PluginLink } from "./PluginLink";
+import { Button } from "./common/Button";
 
 // take in a CSV, and match it to the current sheet.
 
@@ -167,6 +168,15 @@ export class CsvMatchInput extends React.Component<IProps, IState> {
                 id="Audit"
                 url={"#show=delta;ver=" + this.state.postedVerNumber}
               />
+            </p>
+            <p>
+              <Button
+                onClick={() => {
+                  this.setState({ posted: "", posting: false });
+                }}
+              >
+                Go back
+              </Button>
             </p>
           </Copy>
         );
