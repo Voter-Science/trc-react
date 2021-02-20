@@ -281,6 +281,10 @@ const NumericFilterLi = styled.li`
   }
 `;
 
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function SimpleTable({
   colors,
   customColumn,
@@ -417,7 +421,7 @@ export function SimpleTable({
             return;
           }
           // test for string
-          const regex = new RegExp(filter.trim(), "i");
+          const regex = new RegExp(escapeRegExp(filter.trim()), "i");
           if (regex.test(entry)) {
             allIndexes.push(index);
           }
