@@ -39,7 +39,7 @@ export class CsvInput extends React.Component<IProps, IState> {
   }
 
   static parseCsv(text: string): ISheetContents {
-    const lines: any = parse(text, { delimitersToGuess: ["\t", ","] }).data;
+    const lines: any = parse(text.trim(), { delimitersToGuess: ["\t", ","] }).data;
     const names: string[] = lines[0];
     const cols: any[] = [];
 
