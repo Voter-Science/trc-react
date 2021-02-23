@@ -552,7 +552,7 @@ export function SimpleTable({
     });
   } else {
     normalizedData.sort((a, b) => {
-      return a.values[sorter].toLowerCase() < b.values[sorter].toLowerCase()
+      return a.values[sorter]?.toLowerCase() < b.values[sorter]?.toLowerCase()
         ? sortingOrder === "ASC"
           ? -1
           : 1
