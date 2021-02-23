@@ -860,7 +860,7 @@ export function SimpleTable({
                       >
                         <Td colSpan={columns.length}>
                           {collapsedGroups[
-                            row.values[groupByIndex].toLowerCase()
+                            row.values[groupByIndex]?.toLowerCase()
                           ] ? (
                             <>&#x25B8;</>
                           ) : (
@@ -882,7 +882,7 @@ export function SimpleTable({
                       >
                         <Td colSpan={columns.length}>
                           {collapsedGroups[
-                            row.values[groupByIndex].toLowerCase()
+                            row.values[groupByIndex]?.toLowerCase()
                           ] ? (
                             <>&#x25B8;</>
                           ) : (
@@ -894,7 +894,7 @@ export function SimpleTable({
                     ) : null}
                     {groupBy &&
                     collapsedGroups[
-                      row.values[groupByIndex].toLowerCase()
+                      row.values[groupByIndex]?.toLowerCase()
                     ] ? null : (
                       <Tr
                         key={`r${i}`}
