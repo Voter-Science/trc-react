@@ -534,7 +534,10 @@ export function SimpleTable({
 
   // Sort data
   function toNumber(val: string): number {
-    return parseFloat(val);
+    if (!val) {
+      return NaN;
+    }
+    return parseFloat(val.replace(",", "").replace("$", ""));
   }
 
   const isSorterNumeric = !normalizedData
@@ -543,8 +546,11 @@ export function SimpleTable({
 
   if (isSorterNumeric) {
     normalizedData.sort((a, b) => {
-      if (!a.values[sorter] || !b.values[sorter]) {
-        return -1;
+      if (!a.values[sorter]) {
+        return sortingOrder === "ASC" ? -1 : 1;
+      }
+      if (!b.values[sorter]) {
+        return sortingOrder === "ASC" ? 1 : -1;
       }
       return sortingOrder === "ASC"
         ? toNumber(a.values[sorter]) - toNumber(b.values[sorter])
