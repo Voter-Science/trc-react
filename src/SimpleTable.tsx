@@ -30,6 +30,7 @@ interface IProps {
   hasColumnFiltering?: boolean;
   hasGroupBy?: boolean;
   tableIdentifier?: string;
+  resultMessage?: (found: number, total: number) => React.ReactNode;
 }
 
 interface TrProps {
@@ -300,6 +301,7 @@ export function SimpleTable({
   hasColumnFiltering = true,
   hasGroupBy = true,
   tableIdentifier = "Table1",
+  resultMessage,
 }: IProps) {
   let columns = Object.keys(data);
   const colFilters: { [dynamic: string]: string } = {};
@@ -752,17 +754,28 @@ export function SimpleTable({
         {hasFullScreen && (
           <FullScreenActions>
             <p>
-              Showing{" "}
-              <strong>
-                {data?.[Object.keys(data)?.[0]].length > 500
-                  ? 500
-                  : data?.[Object.keys(data)?.[0]].length}
-              </strong>{" "}
-              of{" "}
-              <strong>
-                {originalData?.[Object.keys(originalData)?.[0]].length}
-              </strong>{" "}
-              results
+              {resultMessage ? (
+                resultMessage(
+                  data?.[Object.keys(data)?.[0]].length > 500
+                    ? 500
+                    : data?.[Object.keys(data)?.[0]].length,
+                  originalData?.[Object.keys(originalData)?.[0]].length
+                )
+              ) : (
+                <>
+                  Showing{" "}
+                  <strong>
+                    {data?.[Object.keys(data)?.[0]].length > 500
+                      ? 500
+                      : data?.[Object.keys(data)?.[0]].length}
+                  </strong>{" "}
+                  of{" "}
+                  <strong>
+                    {originalData?.[Object.keys(originalData)?.[0]].length}
+                  </strong>{" "}
+                  results
+                </>
+              )}
             </p>
             <div>
               {hasGroupBy && (
