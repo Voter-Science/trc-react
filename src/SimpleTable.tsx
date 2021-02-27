@@ -2,11 +2,10 @@ import * as React from "react";
 import { css } from "@emotion/core";
 import styled from "@emotion/styled";
 
-import { SheetContents, ISheetContents } from "trc-sheet/sheetContents";
+import { ISheetContents } from "trc-sheet/sheetContents";
 
 import { Button } from "./common/Button";
 import { HorizontalList } from "./common/HorizontalList";
-import { Grid } from "./common/Grid";
 import Modal from "./common/Modal";
 import { DownloadCsv } from "./DownloadCsv";
 
@@ -108,11 +107,18 @@ const TableWrapper = styled.div<{ fullScreen: boolean }>`
     `}
 `;
 
-const Table = styled.table`
+const Table = styled.table<{ fullScreen: boolean }>`
   border: none;
   border-collapse: collapse;
-  padding: 5px;
   width: 100%;
+  display: block;
+  height: 800px;
+  overflow: auto;
+  ${(props) =>
+    props.fullScreen &&
+    css`
+      height: calc(100% - 68px);
+    `}
 `;
 
 const Tr = styled.tr<TrProps>`
@@ -154,6 +160,8 @@ const Th = styled.th<{
   position: relative;
   text-align: left;
   vertical-align: middle;
+  position: sticky;
+  top: 0;
   .header-string {
     display: flex;
   }
@@ -282,6 +290,24 @@ const NumericFilterLi = styled.li`
   }
 `;
 
+const Pagination = styled.div`
+  padding-top: 1rem;
+  text-align: center;
+  height: 38px;
+  > button {
+    background: #5c7df2;
+    border: none;
+    border-radius: 2px;
+    color: #fff;
+    margin: 0 1rem;
+    display: inline-block;
+    width: 30px;
+    &:disabled {
+      opacity: 0;
+    }
+  }
+`;
+
 function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -322,6 +348,7 @@ export function SimpleTable({
   const [collapsedGroups, setCollapsedGroups] = React.useState<{
     [dynamic: string]: boolean;
   }>({});
+  const [page, setPage] = React.useState(1);
 
   const originalData = JSON.parse(JSON.stringify(data));
 
@@ -467,6 +494,10 @@ export function SimpleTable({
       setSorter(i);
     }
   }
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [columnFilters]);
 
   React.useEffect(() => {
     if (!disableQueryString) {
@@ -756,20 +787,13 @@ export function SimpleTable({
             <p>
               {resultMessage ? (
                 resultMessage(
-                  data?.[Object.keys(data)?.[0]].length > 500
-                    ? 500
-                    : data?.[Object.keys(data)?.[0]].length,
+                  data?.[Object.keys(data)?.[0]].length,
                   originalData?.[Object.keys(originalData)?.[0]].length
                 )
               ) : (
                 <>
                   Showing{" "}
-                  <strong>
-                    {data?.[Object.keys(data)?.[0]].length > 500
-                      ? 500
-                      : data?.[Object.keys(data)?.[0]].length}
-                  </strong>{" "}
-                  of{" "}
+                  <strong>{data?.[Object.keys(data)?.[0]].length}</strong> of{" "}
                   <strong>
                     {originalData?.[Object.keys(originalData)?.[0]].length}
                   </strong>{" "}
@@ -804,7 +828,7 @@ export function SimpleTable({
           </FullScreenActions>
         )}
         <TableWrapper fullScreen={fullScreen}>
-          <Table>
+          <Table fullScreen={fullScreen}>
             <thead>
               <Tr>
                 {customColumn && <Th />}
@@ -867,87 +891,105 @@ export function SimpleTable({
               </Tr>
             </thead>
             <tbody>
-              {normalizedData.slice(0, 500).map((row, i) => {
-                const groupByIndex = columns.findIndex((x) => x === groupBy);
+              {normalizedData
+                .slice((page - 1) * 500, page * 500)
+                .map((row, i) => {
+                  const groupByIndex = columns.findIndex((x) => x === groupBy);
 
-                return (
-                  <React.Fragment key={i}>
-                    {groupBy && i === 0 ? (
-                      <Tr
-                        separator
-                        onClick={() => onGroupClick(row.values[groupByIndex])}
-                      >
-                        <Td colSpan={columns.length}>
-                          {collapsedGroups[
-                            row.values[groupByIndex]?.toLowerCase()
-                          ] ? (
-                            <>&#x25B8;</>
-                          ) : (
-                            <>&#x25BE;</>
-                          )}{" "}
-                          {row.values[groupByIndex]}
-                        </Td>
-                      </Tr>
-                    ) : null}
-                    {groupBy &&
-                    i > 0 &&
-                    normalizedData[i - 1].values[
-                      groupByIndex
-                    ]?.toLowerCase() !==
-                      row.values[groupByIndex]?.toLowerCase() ? (
-                      <Tr
-                        separator
-                        onClick={() => onGroupClick(row.values[groupByIndex])}
-                      >
-                        <Td colSpan={columns.length}>
-                          {collapsedGroups[
-                            row.values[groupByIndex]?.toLowerCase()
-                          ] ? (
-                            <>&#x25B8;</>
-                          ) : (
-                            <>&#x25BE;</>
-                          )}{" "}
-                          {row.values[groupByIndex]}
-                        </Td>
-                      </Tr>
-                    ) : null}
-                    {groupBy &&
-                    collapsedGroups[
-                      row.values[groupByIndex]?.toLowerCase()
-                    ] ? null : (
-                      <Tr
-                        key={`r${i}`}
-                        onClick={() => {
-                          const firstKey = Object.keys(originalData)[
-                            rowIdentifier
-                          ];
-                          const dataKeys = Object.keys(data);
-                          const firstKeyIndex = dataKeys.findIndex(
-                            (x) => x === firstKey
-                          );
-                          onRowClick(row.values[firstKeyIndex]);
-                        }}
-                        highlight={selectedRows && selectedRows[row.values[0]]}
-                      >
-                        {customColumn && <Td>{customColumn}</Td>}
-                        {row.values.map((field, j) => (
-                          <Td
-                            key={`${i}_${j}`}
-                            collapsed={collapsedColumns[columns[j]]}
-                            background={
-                              colors?.[columns[j]]?.[row.originalIndex]
-                            }
-                          >
-                            {field}
+                  return (
+                    <React.Fragment key={i}>
+                      {groupBy && i === 0 ? (
+                        <Tr
+                          separator
+                          onClick={() => onGroupClick(row.values[groupByIndex])}
+                        >
+                          <Td colSpan={columns.length}>
+                            {collapsedGroups[
+                              row.values[groupByIndex]?.toLowerCase()
+                            ] ? (
+                              <>&#x25B8;</>
+                            ) : (
+                              <>&#x25BE;</>
+                            )}{" "}
+                            {row.values[groupByIndex]}
                           </Td>
-                        ))}
-                      </Tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+                        </Tr>
+                      ) : null}
+                      {groupBy &&
+                      i > 0 &&
+                      normalizedData[i - 1].values[
+                        groupByIndex
+                      ]?.toLowerCase() !==
+                        row.values[groupByIndex]?.toLowerCase() ? (
+                        <Tr
+                          separator
+                          onClick={() => onGroupClick(row.values[groupByIndex])}
+                        >
+                          <Td colSpan={columns.length}>
+                            {collapsedGroups[
+                              row.values[groupByIndex]?.toLowerCase()
+                            ] ? (
+                              <>&#x25B8;</>
+                            ) : (
+                              <>&#x25BE;</>
+                            )}{" "}
+                            {row.values[groupByIndex]}
+                          </Td>
+                        </Tr>
+                      ) : null}
+                      {groupBy &&
+                      collapsedGroups[
+                        row.values[groupByIndex]?.toLowerCase()
+                      ] ? null : (
+                        <Tr
+                          key={`r${i}`}
+                          onClick={() => {
+                            const firstKey = Object.keys(originalData)[
+                              rowIdentifier
+                            ];
+                            const dataKeys = Object.keys(data);
+                            const firstKeyIndex = dataKeys.findIndex(
+                              (x) => x === firstKey
+                            );
+                            onRowClick(row.values[firstKeyIndex]);
+                          }}
+                          highlight={
+                            selectedRows && selectedRows[row.values[0]]
+                          }
+                        >
+                          {customColumn && <Td>{customColumn}</Td>}
+                          {row.values.map((field, j) => (
+                            <Td
+                              key={`${i}_${j}`}
+                              collapsed={collapsedColumns[columns[j]]}
+                              background={
+                                colors?.[columns[j]]?.[row.originalIndex]
+                              }
+                            >
+                              {field}
+                            </Td>
+                          ))}
+                        </Tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
             </tbody>
           </Table>
+          {Math.ceil(normalizedData.length / 500) !== 0 && (
+            <Pagination>
+              <button onClick={() => setPage(page - 1)} disabled={page === 1}>
+                &#8249;
+              </button>
+              {page}/{Math.ceil(normalizedData.length / 500)}
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={normalizedData.length < 500 * page}
+              >
+                &#8250;
+              </button>
+            </Pagination>
+          )}
         </TableWrapper>
       </FullScreenWrapper>
       {downloadIcon && (
