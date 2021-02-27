@@ -112,12 +112,13 @@ const Table = styled.table<{ fullScreen: boolean }>`
   border-collapse: collapse;
   width: 100%;
   display: block;
-  height: 800px;
+  max-height: 800px;
   overflow: auto;
   ${(props) =>
     props.fullScreen &&
     css`
       height: calc(100% - 68px);
+      max-height: 100%;
     `}
 `;
 
