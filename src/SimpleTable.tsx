@@ -1,11 +1,13 @@
 import * as React from "react";
 import { css } from "@emotion/core";
 import styled from "@emotion/styled";
+import { jsPDF } from "jspdf";
 
 import { ISheetContents } from "trc-sheet/sheetContents";
 
 import { Button } from "./common/Button";
 import { HorizontalList } from "./common/HorizontalList";
+import { Copy } from "./common/Copy";
 import Modal from "./common/Modal";
 import { DownloadCsv } from "./DownloadCsv";
 
@@ -20,6 +22,7 @@ interface IProps {
   data: ISheetContents;
   disableQueryString?: boolean;
   downloadIcon?: boolean;
+  downloadPdf?: boolean;
   onRowClick?: (recId: string) => void;
   rowIdentifier?: number;
   selectedRows?: { [dynamic: string]: boolean };
@@ -107,13 +110,19 @@ const TableWrapper = styled.div<{ fullScreen: boolean }>`
     `}
 `;
 
-const Table = styled.table<{ fullScreen: boolean }>`
+const Table = styled.table<{ fullScreen: boolean; generatingPdf: boolean }>`
   border: none;
   border-collapse: collapse;
   width: 100%;
   display: block;
   max-height: 800px;
   overflow: auto;
+  ${(props) =>
+    props.generatingPdf &&
+    css`
+      max-height: 100%;
+      pointer-events: none;
+    `}
   ${(props) =>
     props.fullScreen &&
     css`
@@ -319,6 +328,7 @@ export function SimpleTable({
   data,
   disableQueryString = false,
   downloadIcon,
+  downloadPdf,
   onRowClick,
   rowIdentifier = 0,
   selectedRows,
@@ -337,6 +347,7 @@ export function SimpleTable({
   columns.forEach((col) => (colExpanded[col] = false));
 
   const [fullScreen, setFullScreen] = React.useState(false);
+  const [generatingPdf, setGeneratingPdf] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
   const [collapsedColumns, setCollapsedColumns] = React.useState(colExpanded);
   const [groupBy, setGroupBy] = React.useState("");
@@ -724,6 +735,27 @@ export function SimpleTable({
     setCollapsedGroups(collapsedGroupsCopy);
   }
 
+  function generatePdf() {
+    setGeneratingPdf(true);
+    setTimeout(() => {
+      const table = document.getElementById("tableId");
+      const doc = new jsPDF({
+        orientation: table.scrollWidth > table.scrollHeight ? "l" : "p",
+        unit: "px",
+        format: [table.scrollWidth + 20, table.scrollHeight + 20],
+        compress: true,
+      });
+      doc.html(document.getElementById("tableId"), {
+        callback: function (doc) {
+          doc.save();
+          setGeneratingPdf(false);
+        },
+        x: 10,
+        y: 10,
+      });
+    }, 100);
+  }
+
   return (
     <>
       {selectedRowValues && (
@@ -782,6 +814,13 @@ export function SimpleTable({
           </HorizontalList>
         </Modal>
       )}
+      {generatingPdf && (
+        <Copy>
+          <p style={{ textAlign: "center", fontWeight: "bold" }}>
+            Generating PDF, please wait...
+          </p>
+        </Copy>
+      )}
       <FullScreenWrapper fullScreen={fullScreen}>
         {hasFullScreen && (
           <FullScreenActions>
@@ -829,14 +868,18 @@ export function SimpleTable({
           </FullScreenActions>
         )}
         <TableWrapper fullScreen={fullScreen}>
-          <Table fullScreen={fullScreen}>
+          <Table
+            fullScreen={fullScreen}
+            generatingPdf={generatingPdf}
+            id="tableId"
+          >
             <thead>
               <Tr>
                 {customColumn && <Th />}
                 {headers.map((header, i) => (
                   <Th
                     key={header}
-                    isSorter={header === headers[sorter]}
+                    isSorter={!generatingPdf && header === headers[sorter]}
                     sortingOrder={sortingOrder}
                     columnFiltering={hasColumnFiltering}
                     collapsed={collapsedColumns[header]}
@@ -857,14 +900,20 @@ export function SimpleTable({
                       >
                         {header}
                       </span>
-                      <span
-                        style={{ marginLeft: "10px" }}
-                        onClick={() => toggleColumnCollapse(header)}
-                      >
-                        {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
-                      </span>
+                      {!generatingPdf && (
+                        <span
+                          style={{ marginLeft: "10px" }}
+                          onClick={() => toggleColumnCollapse(header)}
+                        >
+                          {collapsedColumns[header] ? (
+                            <>&#8677;</>
+                          ) : (
+                            <>&#8676;</>
+                          )}
+                        </span>
+                      )}
                     </div>
-                    {hasColumnFiltering && (
+                    {hasColumnFiltering && !generatingPdf && (
                       <>
                         <input
                           type="text"
@@ -993,9 +1042,10 @@ export function SimpleTable({
           )}
         </TableWrapper>
       </FullScreenWrapper>
-      {downloadIcon && (
+      {(downloadIcon || downloadPdf) && (
         <HorizontalList alignRight>
-          <DownloadCsv data={data} />
+          {downloadIcon && <DownloadCsv data={data} />}
+          {downloadPdf && <Button onClick={generatePdf}>Download PDF</Button>}
         </HorizontalList>
       )}
     </>
