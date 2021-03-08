@@ -1,7 +1,6 @@
 import * as React from "react";
 import { css } from "@emotion/core";
 import styled from "@emotion/styled";
-import { jsPDF } from "jspdf";
 
 import { ISheetContents } from "trc-sheet/sheetContents";
 
@@ -735,24 +734,39 @@ export function SimpleTable({
     setCollapsedGroups(collapsedGroupsCopy);
   }
 
+  function printElem(elem: HTMLElement) {
+    const myWindow = window.open("", "PRINT", "height=400,width=600");
+
+    myWindow.document.write(`
+      <html>
+        <head>
+          <title>${document.title}</title>
+        </head>
+        <style>
+          table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+          }
+        </style>
+        <body>
+          ${elem.innerHTML}
+        </body>
+      </html>
+    `);
+
+    myWindow.document.close(); // necessary for IE >= 10
+    myWindow.focus(); // necessary for IE >= 10*/
+    myWindow.print();
+    myWindow.close();
+
+    return true;
+  }
+
   function generatePdf() {
     setGeneratingPdf(true);
     setTimeout(() => {
-      const table = document.getElementById("tableId");
-      const doc = new jsPDF({
-        orientation: table.scrollWidth > table.scrollHeight ? "l" : "p",
-        unit: "px",
-        format: [table.scrollWidth + 20, table.scrollHeight + 20],
-        compress: true,
-      });
-      doc.html(document.getElementById("tableId"), {
-        callback: function (doc) {
-          doc.save();
-          setGeneratingPdf(false);
-        },
-        x: 10,
-        y: 10,
-      });
+      printElem(document.getElementById("tableId"));
+      setGeneratingPdf(false);
     }, 100);
   }
 
@@ -867,77 +881,75 @@ export function SimpleTable({
             </div>
           </FullScreenActions>
         )}
-        <TableWrapper fullScreen={fullScreen}>
-          <Table
-            fullScreen={fullScreen}
-            generatingPdf={generatingPdf}
-            id="tableId"
-          >
+        <TableWrapper fullScreen={fullScreen} id="tableId">
+          <Table fullScreen={fullScreen} generatingPdf={generatingPdf}>
             <thead>
               <Tr>
                 {customColumn && <Th />}
-                {headers.map((header, i) => (
-                  <Th
-                    key={header}
-                    isSorter={!generatingPdf && header === headers[sorter]}
-                    sortingOrder={sortingOrder}
-                    columnFiltering={hasColumnFiltering}
-                    collapsed={collapsedColumns[header]}
-                  >
-                    <div className="header-string">
-                      <span
-                        onClick={() => onHeaderClick(i)}
-                        style={
-                          collapsedColumns[header]
-                            ? {
-                                width: "24px",
-                                display: "inline-block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }
-                            : {}
-                        }
-                      >
-                        {header}
-                      </span>
-                      {!generatingPdf && (
+                {headers.map((header, i) =>
+                  generatingPdf && collapsedColumns[header] ? null : (
+                    <Th
+                      key={header}
+                      isSorter={!generatingPdf && header === headers[sorter]}
+                      sortingOrder={sortingOrder}
+                      columnFiltering={hasColumnFiltering}
+                      collapsed={collapsedColumns[header]}
+                    >
+                      <div className="header-string">
                         <span
-                          style={{ marginLeft: "10px" }}
-                          onClick={() => toggleColumnCollapse(header)}
+                          onClick={() => onHeaderClick(i)}
+                          style={
+                            collapsedColumns[header]
+                              ? {
+                                  width: "24px",
+                                  display: "inline-block",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }
+                              : {}
+                          }
                         >
-                          {collapsedColumns[header] ? (
-                            <>&#8677;</>
-                          ) : (
-                            <>&#8676;</>
-                          )}
+                          {header}
                         </span>
-                      )}
-                    </div>
-                    {hasColumnFiltering && !generatingPdf && (
-                      <>
-                        <input
-                          type="text"
-                          placeholder="Filter"
-                          value={columnFilters[header]}
-                          onChange={(e) => onColumnFilterChange(e, header)}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setModalData(header, i)}
-                        >
-                          <svg
-                            id="Icons"
-                            version="1.1"
-                            viewBox="0 0 32 32"
-                            style={{ width: "12px" }}
+                        {!generatingPdf && (
+                          <span
+                            style={{ marginLeft: "10px" }}
+                            onClick={() => toggleColumnCollapse(header)}
                           >
-                            <path d="M16,2C9.3,2,2,3.4,2,6.5V11c0,0.3,0.1,0.6,0.3,0.7L13,21.4V29c0,0.3,0.2,0.7,0.5,0.9C13.6,30,13.8,30,14,30  c0.2,0,0.3,0,0.4-0.1l4-2c0.3-0.2,0.6-0.5,0.6-0.9v-5.6l10.7-9.7c0.2-0.2,0.3-0.5,0.3-0.7V6.5C30,3.4,22.7,2,16,2z M16,4  c8,0,11.9,1.8,12,2.5C27.9,7.2,24,9,16,9C8,9,4.1,7.2,4,6.5C4.1,5.8,8,4,16,4z" />
-                          </svg>
-                        </button>
-                      </>
-                    )}
-                  </Th>
-                ))}
+                            {collapsedColumns[header] ? (
+                              <>&#8677;</>
+                            ) : (
+                              <>&#8676;</>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                      {hasColumnFiltering && !generatingPdf && (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="Filter"
+                            value={columnFilters[header]}
+                            onChange={(e) => onColumnFilterChange(e, header)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setModalData(header, i)}
+                          >
+                            <svg
+                              id="Icons"
+                              version="1.1"
+                              viewBox="0 0 32 32"
+                              style={{ width: "12px" }}
+                            >
+                              <path d="M16,2C9.3,2,2,3.4,2,6.5V11c0,0.3,0.1,0.6,0.3,0.7L13,21.4V29c0,0.3,0.2,0.7,0.5,0.9C13.6,30,13.8,30,14,30  c0.2,0,0.3,0,0.4-0.1l4-2c0.3-0.2,0.6-0.5,0.6-0.9v-5.6l10.7-9.7c0.2-0.2,0.3-0.5,0.3-0.7V6.5C30,3.4,22.7,2,16,2z M16,4  c8,0,11.9,1.8,12,2.5C27.9,7.2,24,9,16,9C8,9,4.1,7.2,4,6.5C4.1,5.8,8,4,16,4z" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+                    </Th>
+                  )
+                )}
               </Tr>
             </thead>
             <tbody>
@@ -1008,17 +1020,20 @@ export function SimpleTable({
                           }
                         >
                           {customColumn && <Td>{customColumn}</Td>}
-                          {row.values.map((field, j) => (
-                            <Td
-                              key={`${i}_${j}`}
-                              collapsed={collapsedColumns[columns[j]]}
-                              background={
-                                colors?.[columns[j]]?.[row.originalIndex]
-                              }
-                            >
-                              {field}
-                            </Td>
-                          ))}
+                          {row.values.map((field, j) =>
+                            generatingPdf &&
+                            collapsedColumns[columns[j]] ? null : (
+                              <Td
+                                key={`${i}_${j}`}
+                                collapsed={collapsedColumns[columns[j]]}
+                                background={
+                                  colors?.[columns[j]]?.[row.originalIndex]
+                                }
+                              >
+                                {field}
+                              </Td>
+                            )
+                          )}
                         </Tr>
                       )}
                     </React.Fragment>
@@ -1026,7 +1041,7 @@ export function SimpleTable({
                 })}
             </tbody>
           </Table>
-          {Math.ceil(normalizedData.length / 500) !== 0 && (
+          {!generatingPdf && Math.ceil(normalizedData.length / 500) !== 0 && (
             <Pagination>
               <button onClick={() => setPage(page - 1)} disabled={page === 1}>
                 &#8249;
