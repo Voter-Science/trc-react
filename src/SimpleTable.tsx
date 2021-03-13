@@ -1,6 +1,8 @@
 import * as React from "react";
 import { css } from "@emotion/core";
 import styled from "@emotion/styled";
+// @ts-ignore
+import * as debounce from "lodash.debounce";
 
 import { ISheetContents } from "trc-sheet/sheetContents";
 
@@ -345,6 +347,7 @@ export function SimpleTable({
   const colExpanded: { [dynamic: string]: boolean } = {};
   columns.forEach((col) => (colExpanded[col] = false));
 
+  const [itemsPerPage, setItemsPerPage] = React.useState(50);
   const [fullScreen, setFullScreen] = React.useState(false);
   const [generatingPdf, setGeneratingPdf] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
@@ -883,78 +886,23 @@ export function SimpleTable({
         )}
         <TableWrapper fullScreen={fullScreen} id="tableId">
           <Table fullScreen={fullScreen} generatingPdf={generatingPdf}>
-            <thead>
-              <Tr>
-                {customColumn && <Th />}
-                {headers.map((header, i) =>
-                  generatingPdf && collapsedColumns[header] ? null : (
-                    <Th
-                      key={header}
-                      isSorter={!generatingPdf && header === headers[sorter]}
-                      sortingOrder={sortingOrder}
-                      columnFiltering={hasColumnFiltering}
-                      collapsed={collapsedColumns[header]}
-                    >
-                      <div className="header-string">
-                        <span
-                          onClick={() => onHeaderClick(i)}
-                          style={
-                            collapsedColumns[header]
-                              ? {
-                                  width: "24px",
-                                  display: "inline-block",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                }
-                              : {}
-                          }
-                        >
-                          {header}
-                        </span>
-                        {!generatingPdf && (
-                          <span
-                            style={{ marginLeft: "10px" }}
-                            onClick={() => toggleColumnCollapse(header)}
-                          >
-                            {collapsedColumns[header] ? (
-                              <>&#8677;</>
-                            ) : (
-                              <>&#8676;</>
-                            )}
-                          </span>
-                        )}
-                      </div>
-                      {hasColumnFiltering && !generatingPdf && (
-                        <>
-                          <input
-                            type="text"
-                            placeholder="Filter"
-                            value={columnFilters[header]}
-                            onChange={(e) => onColumnFilterChange(e, header)}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setModalData(header, i)}
-                          >
-                            <svg
-                              id="Icons"
-                              version="1.1"
-                              viewBox="0 0 32 32"
-                              style={{ width: "12px" }}
-                            >
-                              <path d="M16,2C9.3,2,2,3.4,2,6.5V11c0,0.3,0.1,0.6,0.3,0.7L13,21.4V29c0,0.3,0.2,0.7,0.5,0.9C13.6,30,13.8,30,14,30  c0.2,0,0.3,0,0.4-0.1l4-2c0.3-0.2,0.6-0.5,0.6-0.9v-5.6l10.7-9.7c0.2-0.2,0.3-0.5,0.3-0.7V6.5C30,3.4,22.7,2,16,2z M16,4  c8,0,11.9,1.8,12,2.5C27.9,7.2,24,9,16,9C8,9,4.1,7.2,4,6.5C4.1,5.8,8,4,16,4z" />
-                            </svg>
-                          </button>
-                        </>
-                      )}
-                    </Th>
-                  )
-                )}
-              </Tr>
-            </thead>
+            <TableHead
+              customColumn={customColumn}
+              headers={headers}
+              generatingPdf={generatingPdf}
+              collapsedColumns={collapsedColumns}
+              sorter={sorter}
+              sortingOrder={sortingOrder}
+              hasColumnFiltering={hasColumnFiltering}
+              columnFilters={columnFilters}
+              onHeaderClick={onHeaderClick}
+              toggleColumnCollapse={toggleColumnCollapse}
+              onColumnFilterChange={onColumnFilterChange}
+              setModalData={setModalData}
+            />
             <tbody>
               {normalizedData
-                .slice((page - 1) * 500, page * 500)
+                .slice((page - 1) * itemsPerPage, page * itemsPerPage)
                 .map((row, i) => {
                   const groupByIndex = columns.findIndex((x) => x === groupBy);
 
@@ -1041,20 +989,21 @@ export function SimpleTable({
                 })}
             </tbody>
           </Table>
-          {!generatingPdf && Math.ceil(normalizedData.length / 500) !== 0 && (
-            <Pagination>
-              <button onClick={() => setPage(page - 1)} disabled={page === 1}>
-                &#8249;
-              </button>
-              {page}/{Math.ceil(normalizedData.length / 500)}
-              <button
-                onClick={() => setPage(page + 1)}
-                disabled={normalizedData.length < 500 * page}
-              >
-                &#8250;
-              </button>
-            </Pagination>
-          )}
+          {!generatingPdf &&
+            Math.ceil(normalizedData.length / itemsPerPage) !== 0 && (
+              <Pagination>
+                <button onClick={() => setPage(page - 1)} disabled={page === 1}>
+                  &#8249;
+                </button>
+                {page}/{Math.ceil(normalizedData.length / itemsPerPage)}
+                <button
+                  onClick={() => setPage(page + 1)}
+                  disabled={normalizedData.length < itemsPerPage * page}
+                >
+                  &#8250;
+                </button>
+              </Pagination>
+            )}
         </TableWrapper>
       </FullScreenWrapper>
       {(downloadIcon || downloadPdf) && (
@@ -1064,5 +1013,120 @@ export function SimpleTable({
         </HorizontalList>
       )}
     </>
+  );
+}
+
+interface ITableHeadProps {
+  customColumn: React.ReactNode;
+  headers: string[];
+  generatingPdf: boolean;
+  collapsedColumns: { [dynamic: string]: boolean };
+  sorter: number;
+  sortingOrder: string;
+  hasColumnFiltering: boolean;
+  columnFilters: { [dynamic: string]: string };
+  onHeaderClick: any;
+  toggleColumnCollapse: any;
+  onColumnFilterChange: any;
+  setModalData: any;
+}
+
+function TableHead({
+  customColumn,
+  headers,
+  generatingPdf,
+  collapsedColumns,
+  sorter,
+  sortingOrder,
+  hasColumnFiltering,
+  columnFilters,
+  onHeaderClick,
+  toggleColumnCollapse,
+  onColumnFilterChange,
+  setModalData,
+}: ITableHeadProps) {
+  const [localColumnFilters, setLocalColumnFilters] = React.useState(
+    columnFilters
+  );
+
+  React.useEffect(() => {
+    setLocalColumnFilters(columnFilters);
+  }, [columnFilters]);
+
+  const debounced = debounce(onColumnFilterChange, 150);
+
+  function onLocalColumnFilterChange(
+    e: React.ChangeEvent<HTMLInputElement>,
+    header: string
+  ) {
+    const localColumnFiltersCopy = { ...localColumnFilters };
+    localColumnFiltersCopy[header] = e.target.value;
+    setLocalColumnFilters(localColumnFiltersCopy);
+    debounced(e, header);
+  }
+
+  return (
+    <thead>
+      <Tr>
+        {customColumn && <Th />}
+        {headers.map((header, i) =>
+          generatingPdf && collapsedColumns[header] ? null : (
+            <Th
+              key={header}
+              isSorter={!generatingPdf && header === headers[sorter]}
+              sortingOrder={sortingOrder}
+              columnFiltering={hasColumnFiltering}
+              collapsed={collapsedColumns[header]}
+            >
+              <div className="header-string">
+                <span
+                  onClick={() => onHeaderClick(i)}
+                  style={
+                    collapsedColumns[header]
+                      ? {
+                          width: "24px",
+                          display: "inline-block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }
+                      : {}
+                  }
+                >
+                  {header}
+                </span>
+                {!generatingPdf && (
+                  <span
+                    style={{ marginLeft: "10px" }}
+                    onClick={() => toggleColumnCollapse(header)}
+                  >
+                    {collapsedColumns[header] ? <>&#8677;</> : <>&#8676;</>}
+                  </span>
+                )}
+              </div>
+              {hasColumnFiltering && !generatingPdf && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Filter"
+                    value={localColumnFilters[header]}
+                    onChange={(e) => onLocalColumnFilterChange(e, header)}
+                  />
+                  <button type="button" onClick={() => setModalData(header, i)}>
+                    <svg
+                      id="Icons"
+                      version="1.1"
+                      viewBox="0 0 32 32"
+                      style={{ width: "12px" }}
+                    >
+                      <path d="M16,2C9.3,2,2,3.4,2,6.5V11c0,0.3,0.1,0.6,0.3,0.7L13,21.4V29c0,0.3,0.2,0.7,0.5,0.9C13.6,30,13.8,30,14,30  c0.2,0,0.3,0,0.4-0.1l4-2c0.3-0.2,0.6-0.5,0.6-0.9v-5.6l10.7-9.7c0.2-0.2,0.3-0.5,0.3-0.7V6.5C30,3.4,22.7,2,16,2z M16,4  c8,0,11.9,1.8,12,2.5C27.9,7.2,24,9,16,9C8,9,4.1,7.2,4,6.5C4.1,5.8,8,4,16,4z" />
+                    </svg>
+                  </button>
+                </>
+              )}
+            </Th>
+          )
+        )}
+      </Tr>
+    </thead>
   );
 }
