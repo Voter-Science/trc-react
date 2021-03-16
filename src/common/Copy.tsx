@@ -10,6 +10,7 @@ interface IProps {
 }
 
 interface IContainer {
+  alignCenter?: boolean;
   alignRight?: boolean;
   bold?: boolean;
 }
@@ -27,6 +28,11 @@ const Container = styled.div<IContainer>`
   pre {
     white-space: normal;
   }
+  ${props => props.alignCenter && css`
+    &, * {
+      text-align: center;
+    }
+  `}
   ${props => props.alignRight && css`
     &, * {
       text-align: right;

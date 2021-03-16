@@ -1,5 +1,7 @@
 import * as React from "react";
-import styled from "@emotion/styled";
+import * as showdown from "showdown";
+
+import { Copy } from "./common/Copy";
 
 interface IProps {
   QueryResult: any;
@@ -21,13 +23,6 @@ interface IProps {
     that: any
   ): void;
 }
-
-const Txt = styled.textarea`
-  display: block;
-  margin: 1rem 0;
-  width: 100%;
-  height: 5rem;
-`;
 
 class ChartSorter {
   public static Ascending(a: any, b: any) {
@@ -268,7 +263,6 @@ export function GlobalChart({
         },
         title: {
           display: true,
-          text: Text,
         },
         onClick:
           onDataPointClick &&
@@ -291,8 +285,15 @@ export function GlobalChart({
     }
   }, [chartType, chartSorting, QueryResult, groupBy]);
 
+  const converter = new showdown.Converter();
+
   return (
     <div>
+      {Text && (
+        <Copy>
+          <div dangerouslySetInnerHTML={{ __html: converter.makeHtml(Text) }} />
+        </Copy>
+      )}
       <div ref={chartContainer} />
     </div>
   );
