@@ -515,9 +515,7 @@ export function SimpleTable({
 
   React.useEffect(() => {
     if (!disableQueryString) {
-      const hasValues = columns.some((x) => columnFilters[x] !== "");
-
-      const urlParams = new URLSearchParams(window.location.search);
+      let urlParams = new URLSearchParams(window.location.search);
       const hashed = urlParams.get("TableFilters");
       let currentQueryStringObject: { [dynamic: string]: any } = {};
       if (hashed) {
@@ -525,34 +523,18 @@ export function SimpleTable({
         currentQueryStringObject = JSON.parse(decoded);
       }
 
-      if (hasValues) {
-        currentQueryStringObject[tableIdentifier] = {};
-        currentQueryStringObject[tableIdentifier].cf = columnFilters;
-        currentQueryStringObject[tableIdentifier].s = sorter;
-        currentQueryStringObject[tableIdentifier].o = sortingOrder;
-        const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.set("TableFilters", encoded);
-        const newRelativePathQuery =
-          `${
-            window.location.href.replace(window.location.hash, "").split("?")[0]
-          }?${urlParams.toString()}` + window.location.hash;
-        history.pushState(null, "", newRelativePathQuery);
-      } else {
-        let urlParams = new URLSearchParams(window.location.search);
-        delete currentQueryStringObject[tableIdentifier];
-        if (Object.keys(currentQueryStringObject).length === 0) {
-          urlParams.delete("TableFilters");
-        } else {
-          const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
-          urlParams.set("TableFilters", encoded);
-        }
-        const newRelativePathQuery =
-          `${
-            window.location.href.replace(window.location.hash, "").split("?")[0]
-          }?${urlParams.toString()}` + window.location.hash;
-        history.pushState(null, "", newRelativePathQuery);
-      }
+      currentQueryStringObject[tableIdentifier] = {};
+      currentQueryStringObject[tableIdentifier].cf = columnFilters;
+      currentQueryStringObject[tableIdentifier].s = sorter;
+      currentQueryStringObject[tableIdentifier].o = sortingOrder;
+      const encoded = encodeURI(JSON.stringify(currentQueryStringObject));
+      urlParams = new URLSearchParams(window.location.search);
+      urlParams.set("TableFilters", encoded);
+      const newRelativePathQuery =
+        `${
+          window.location.href.replace(window.location.hash, "").split("?")[0]
+        }?${urlParams.toString()}` + window.location.hash;
+      history.pushState(null, "", newRelativePathQuery);
     }
   }, [colFilters, sorter, sortingOrder]);
 
