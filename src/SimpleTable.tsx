@@ -948,6 +948,7 @@ export function SimpleTable({
                           highlight={
                             selectedRows && selectedRows[row.values[0]]
                           }
+                          style={{ cursor: "pointer" }}
                         >
                           {customColumn && <Td>{customColumn}</Td>}
                           {row.values.map((field, j) =>
