@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { css } from "@emotion/core";
 import styled from '@emotion/styled';
 
 // HorizontalList is a component that takes an array of arbitrary react nodes,
@@ -10,6 +11,7 @@ interface IProps {
 
 interface IListProps {
   alignRight?: boolean;
+  responsiveBreakpoint?: number;
 }
 
 const List = styled.ul<IListProps>`
@@ -24,6 +26,11 @@ const List = styled.ul<IListProps>`
   &:last-child {
     margin-bottom: 0;
   }
+  ${props => props.responsiveBreakpoint && css`
+    @media (max-width: ${props.responsiveBreakpoint}px) {
+      flex-direction: column;
+    }
+  `}
 `;
 
 const Item = styled.li`
@@ -36,11 +43,11 @@ const Item = styled.li`
   }
 `;
 
-export const HorizontalList = ({ alignRight, children }: IProps & IListProps) => {
+export const HorizontalList = ({ alignRight, children, responsiveBreakpoint }: IProps & IListProps) => {
   const childrenArray = Array.isArray(children) ? children : [children];
 
   return (
-    <List alignRight={alignRight}>
+    <List alignRight={alignRight} responsiveBreakpoint={responsiveBreakpoint}>
       {childrenArray.map((child, i) => (
         <Item key={i}>
           {child}
