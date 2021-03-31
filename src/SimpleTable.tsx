@@ -59,7 +59,7 @@ const FullScreenWrapper = styled.div<{ fullScreen: boolean }>`
 `;
 
 const FullScreenActions = styled.div`
-  height: 30px;
+  padding: 1rem 0;
   display: flex;
   > p {
     margin: 0;
@@ -70,6 +70,14 @@ const FullScreenActions = styled.div`
   > div {
     text-align: right;
     flex-grow: 1;
+  }
+  @media (max-width: 800px) {
+    height: auto;
+    flex-direction: column;
+    > div {
+      text-align: left;
+      margin-top: 1rem;
+    }
   }
 `;
 
