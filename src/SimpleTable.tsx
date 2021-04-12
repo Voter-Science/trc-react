@@ -328,7 +328,7 @@ const Pagination = styled.div`
 `;
 
 function escapeRegExp(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return string?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function SimpleTable({
@@ -573,6 +573,9 @@ export function SimpleTable({
   function toNumber(val: string): number {
     if (!val) {
       return NaN;
+    }
+    if (typeof val === "number") {
+      return val;
     }
     return parseFloat(val.replace(",", "").replace("$", ""));
   }
