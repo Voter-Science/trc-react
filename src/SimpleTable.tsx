@@ -381,6 +381,9 @@ export function SimpleTable({
       if (hashed) {
         const decoded = decodeURI(hashed);
         const toObject = JSON.parse(decoded);
+        if (!toObject[tableIdentifier]) {
+          return;
+        }
         if (
           Object.keys(toObject[tableIdentifier].cf).toString() !==
           columns.toString()
