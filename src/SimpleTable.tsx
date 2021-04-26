@@ -580,7 +580,7 @@ export function SimpleTable({
     if (typeof val === "number") {
       return val;
     }
-    return parseFloat(val.replace(",", "").replace("$", ""));
+    return parseFloat(val.replace(/\,/g, "").replace("$", ""));
   }
 
   const isSorterNumeric = !normalizedData
