@@ -34,6 +34,7 @@ interface IProps {
   hasGroupBy?: boolean;
   tableIdentifier?: string;
   resultMessage?: (found: number, total: number) => React.ReactNode;
+  hideUnspecifiedColumns?: boolean;
 }
 
 interface TrProps {
@@ -348,6 +349,7 @@ export function SimpleTable({
   hasGroupBy = true,
   tableIdentifier = "Table1",
   resultMessage,
+  hideUnspecifiedColumns,
 }: IProps) {
   let columns = Object.keys(data);
   const colFilters: { [dynamic: string]: string } = {};
@@ -408,7 +410,8 @@ export function SimpleTable({
   if (columnsOrdering) {
     data = reorderISheetColumns(
       JSON.parse(JSON.stringify(data)),
-      columnsOrdering
+      columnsOrdering,
+      hideUnspecifiedColumns
     );
     columns = Object.keys(data);
   }
