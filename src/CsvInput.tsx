@@ -39,7 +39,8 @@ export class CsvInput extends React.Component<IProps, IState> {
   }
 
   static parseCsv(text: string): ISheetContents {
-    const lines: any = parse(text.trim(), { delimitersToGuess: ["\t", ","] }).data;
+    const lines: any = parse(text.trim(), { delimitersToGuess: ["\t", ","] })
+      .data;
     const names: string[] = lines[0];
     const cols: any[] = [];
 
@@ -103,7 +104,7 @@ export class CsvInput extends React.Component<IProps, IState> {
 
   // Updates in text Areas
   private handleChange(event: any) {
-    this.setState({ rawText: event.target.value });
+    this.setState({ rawText: event.target.value.replace(/\t/g, ",") });
   }
 
   public render() {
