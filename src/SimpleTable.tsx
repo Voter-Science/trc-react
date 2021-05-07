@@ -28,6 +28,7 @@ interface IProps {
   rowIdentifier?: number;
   selectedRows?: { [dynamic: string]: boolean };
   defaultSortBy?: string;
+  defaultGroupBy?: string;
   columnsOrdering?: string[];
   hasFullScreen?: boolean;
   hasColumnFiltering?: boolean;
@@ -343,6 +344,7 @@ export function SimpleTable({
   rowIdentifier = 0,
   selectedRows,
   defaultSortBy,
+  defaultGroupBy,
   columnsOrdering,
   hasFullScreen = true,
   hasColumnFiltering = true,
@@ -362,7 +364,7 @@ export function SimpleTable({
   const [generatingPdf, setGeneratingPdf] = React.useState(false);
   const [columnFilters, setColumnFilters] = React.useState(colFilters);
   const [collapsedColumns, setCollapsedColumns] = React.useState(colExpanded);
-  const [groupBy, setGroupBy] = React.useState("");
+  const [groupBy, setGroupBy] = React.useState(defaultGroupBy || "");
   const [hasBlanks, setHasBlanks] = React.useState(false);
   const [selectedRowValues, setSelectedRowValues] = React.useState<any[]>(null);
   const [selectedHeader, setSelectedHeader] = React.useState("");
