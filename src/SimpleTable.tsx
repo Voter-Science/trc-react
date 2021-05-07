@@ -18,24 +18,51 @@ import reorderISheetColumns from "./utils/reorderISheetColumns";
 // Readonly.
 
 interface IProps {
-  colors?: ISheetContents;
-  customColumn?: React.ReactNode;
+  // Any dataset in the form of ISheetContents will be accepted.
   data: ISheetContents;
+  // This adds a background color to a specific cell if specified.
+  // Same format as "data" (ISheetContents), but has valid CSS colors as values instead.
+  // If a color is not defined for a particular cell, the cell background will remain white.
+  colors?: ISheetContents;
+  // Adds a custom column at the beginning of each row. Accepts arbitrary React nodes.
+  customColumn?: React.ReactNode;
+  // This disables saving the status of the table filter as a query string altogether.
   disableQueryString?: boolean;
+  // Enables downloading the dataset as a CSV
   downloadIcon?: boolean;
+  // Enables downloading the dataset as a PDF
   downloadPdf?: boolean;
+  // Row click event. It provides the value in the first column for the clicked row.
+  // If the prop "rowIdentifier" is specified, it will provide that value instead.
   onRowClick?: (recId: string) => void;
+  // The value which will be provided to the "onRowClick" event. If "rowIdentifier" is
+  // not specified, the value in the first column is provided to "onRowClick".
   rowIdentifier?: number;
   selectedRows?: { [dynamic: string]: boolean };
+  // Default column to sort the data set by.
   defaultSortBy?: string;
+  // Default column to group rows by.
   defaultGroupBy?: string;
+  // Array of column names that will determine the order of the columns in the table, from
+  // left to right. If not all columns are specified, the specified ones will be rendered
+  // first, and then the rest after them, in the original order they came in the dataset (if
+  // hideUnspecifiedColumns is not defined).
   columnsOrdering?: string[];
-  hasFullScreen?: boolean;
-  hasColumnFiltering?: boolean;
-  hasGroupBy?: boolean;
-  tableIdentifier?: string;
-  resultMessage?: (found: number, total: number) => React.ReactNode;
+  // If columnsOrdering is set, this option allows SimpleTable to render only the specified
+  // columns in columnsOrdering exclusively.
   hideUnspecifiedColumns?: boolean;
+  // Shows or hides full screen button.
+  hasFullScreen?: boolean;
+  // Shows or hides the filter for each column.
+  hasColumnFiltering?: boolean;
+  // Shows or hides the group by select input.
+  hasGroupBy?: boolean;
+  // Unique string used to identify the table. This is only required when there are multiple
+  // tables on the same page, and query string filter saving is enabled. This option determines
+  // which query string filters belong to which table.
+  tableIdentifier?: string;
+  // Custom result message that appears at the top of the table.
+  resultMessage?: (found: number, total: number) => React.ReactNode;
 }
 
 interface TrProps {
@@ -378,6 +405,7 @@ export function SimpleTable({
 
   const originalData = JSON.parse(JSON.stringify(data));
 
+  // Initialization from query param
   React.useEffect(() => {
     if (!disableQueryString) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -529,6 +557,7 @@ export function SimpleTable({
     setPage(1);
   }, [columnFilters]);
 
+  // Set query string when filter or sorting changes
   React.useEffect(() => {
     if (!disableQueryString) {
       let urlParams = new URLSearchParams(window.location.search);
