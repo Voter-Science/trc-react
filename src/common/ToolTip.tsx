@@ -43,14 +43,16 @@ export class ToolTip extends React.Component<IProps, IState> {
             fontFamily: "Georgia",
             borderRadius: "25px",
             paddingLeft: "7px",
-            paddingRight: "3px"
+            paddingRight: "3px",
+            // zIndex: 9999,
         } as React.CSSProperties;
         
         const tooltipStyle2 = {
-            position: 'relative',
+            position: 'static',
             display: 'inline-block',
             ['background-color']: '#e6f2ff',
             color: 'black',
+            // zIndex: 0
         } as React.CSSProperties;
 
 
