@@ -58,32 +58,30 @@ const Content = styled.div<IElementsProps>`
 `;
 
 export const AccordionPanel = ({ children, accordionNames }: IProps) => {
-    const [activeAccordion, setActiveAccordion] = React.useState<number>(0);
+  const [activeAccordions, setActiveAccordions] = React.useState<{
+    [dynamic: string]: boolean;
+  }>({ "0": true });
 
-    const handleAccordionClick = (index: number) => {
-        setActiveAccordion(index === activeAccordion ? -1 : index);
-    };
-
-    return (
-        <Accordion>
-            {children.map((child, index) => {
-            const isActive = index === activeAccordion;
-
-            return (
-                child && (
-                <Row key={index}>
-                    <Title
-                    active={isActive}
-                    onClick={() => handleAccordionClick(index)}
-                    >
-                    {accordionNames[index]}
-                    </Title>
-                    <Content active={isActive}>{child}</Content>
-                </Row>
-                )
-            );
-            })}
-        </Accordion>
-    );
-    };
-
+  return (
+    <Accordion>
+      {children.map(
+        (child, i) =>
+          child && (
+            <Row key={i}>
+              <Title
+                active={activeAccordions[i]}
+                onClick={() => {
+                  const activeAccordionsCopy = { ...activeAccordions };
+                  activeAccordionsCopy[i] = !activeAccordionsCopy[i];
+                  setActiveAccordions(activeAccordionsCopy);
+                }}
+              >
+                {accordionNames[i]}
+              </Title>
+              <Content active={activeAccordions[i]}>{child}</Content>
+            </Row>
+          )
+      )}
+    </Accordion>
+  );
+};
