@@ -4,13 +4,25 @@ import styled from "@emotion/styled";
 
 // SelectInput is a generic select component.
 
+// Inherits onChange from base. 
+//   onChange={this.onReportSelectorChange}
+/*
+  private onReportSelectorChange(
+        e: React.ChangeEvent<HTMLSelectElement>
+      ): void {
+        const value = e.target.value;
+
+        alert("Changed to: " + value);
+      }
+*/
+
 interface IProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
   label?: string;
   noBlank?: boolean;
-  options: any[];
+  options: any[]; // displayed
   small?: boolean;
-  values?: any[];
+  values?: any[]; // Parallel array to options. Provided in onChange
 }
 
 interface ISizingProps {
