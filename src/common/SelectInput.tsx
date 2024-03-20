@@ -1,10 +1,10 @@
 import * as React from "react";
-import { css } from "@emotion/core";
+import { css } from "@emotion/react";
 import styled from "@emotion/styled";
 
 // SelectInput is a generic select component.
 
-// Inherits onChange from base. 
+// Inherits onChange from base.
 //   onChange={this.onReportSelectorChange}
 /*
   private onReportSelectorChange(

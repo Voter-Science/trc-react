@@ -145,7 +145,7 @@ export class SheetSelector extends React.Component<IProps, IState>
 
     public render() {
         return <>
-            <Button onClick={() => this.onOpenDialog()}>Add Sheet+</Button>
+            <Button onClick={() => this.onOpenDialog()}>Add Sheet++++</Button>
             {this.state.modelOpen && (
                 <Modal close={() => this.setState({ modelOpen: false })}>
                     {this.renderDialog()}

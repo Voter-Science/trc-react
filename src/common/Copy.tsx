@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { css } from '@emotion/core';
-import styled from '@emotion/styled';
+import * as React from "react";
+import { css } from "@emotion/react";
+import styled from "@emotion/styled";
 
 // Copy is a generic copy component responsible for styling text blocks such as
 // paragraphs, lists, block quotes, etc.
@@ -28,25 +28,32 @@ const Container = styled.div<IContainer>`
   pre {
     white-space: normal;
   }
-  ${props => props.alignCenter && css`
-    &, * {
-      text-align: center;
-    }
-  `}
-  ${props => props.alignRight && css`
-    &, * {
-      text-align: right;
-    }
-  `}
-  ${props => props.bold && css`
-    &, * {
-      font-weight: 600;
-    }
-  `}
+  ${(props) =>
+    props.alignCenter &&
+    css`
+      &,
+      * {
+        text-align: center;
+      }
+    `}
+  ${(props) =>
+    props.alignRight &&
+    css`
+      &,
+      * {
+        text-align: right;
+      }
+    `}
+  ${(props) =>
+    props.bold &&
+    css`
+      &,
+      * {
+        font-weight: 600;
+      }
+    `}
 `;
 
 export const Copy = ({ children, ...rest }: IProps & IContainer) => (
-  <Container {...rest}>
-    {children}
-  </Container>
+  <Container {...rest}>{children}</Container>
 );
