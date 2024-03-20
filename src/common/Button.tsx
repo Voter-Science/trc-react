@@ -1,10 +1,11 @@
+import * as React from "react";
 import styled from "@emotion/styled";
 
-interface IProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface IProps {
   secondary?: boolean;
 }
 
-export const Button = styled.button<IProps>`
+const StyledButton = styled.button<IProps>`
   color: #fff;
   background: ${(props) => (props.secondary ? "#777" : "#6485ff")};
   border: none;
@@ -17,3 +18,9 @@ export const Button = styled.button<IProps>`
     opacity: 0.5;
   }
 `;
+
+export const Button = (
+  props: IProps & React.ButtonHTMLAttributes<HTMLButtonElement>
+) => {
+  return <StyledButton {...props} />;
+};

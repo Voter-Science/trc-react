@@ -1,5 +1,5 @@
 import * as React from "react";
-import { css } from "@emotion/core";
+import { css } from "@emotion/css";
 import styled from "@emotion/styled";
 // @ts-ignore
 import * as debounce from "lodash.debounce";
@@ -395,9 +395,8 @@ export function SimpleTable({
   const [hasBlanks, setHasBlanks] = React.useState(false);
   const [selectedRowValues, setSelectedRowValues] = React.useState<any[]>(null);
   const [selectedHeader, setSelectedHeader] = React.useState("");
-  const [isSelectedHeaderNumeric, setIsSelectedHeaderNumeric] = React.useState(
-    false
-  );
+  const [isSelectedHeaderNumeric, setIsSelectedHeaderNumeric] =
+    React.useState(false);
   const [collapsedGroups, setCollapsedGroups] = React.useState<{
     [dynamic: string]: boolean;
   }>({});
@@ -665,9 +664,8 @@ export function SimpleTable({
 
   function applyColumnFilter() {
     const blank = (filter: string) => {
-      const blankInput: HTMLInputElement = document.querySelector(
-        "#filterBlanks"
-      );
+      const blankInput: HTMLInputElement =
+        document.querySelector("#filterBlanks");
       if (!blankInput) {
         return filter;
       }
@@ -678,12 +676,10 @@ export function SimpleTable({
       }
     };
     if (isSelectedHeaderNumeric && selectedRowValues.length > 10) {
-      const greaterThan = document.querySelector<HTMLInputElement>(
-        "#filterGreaterThan"
-      ).value;
-      const lessThan = document.querySelector<HTMLInputElement>(
-        "#filterLessThan"
-      ).value;
+      const greaterThan =
+        document.querySelector<HTMLInputElement>("#filterGreaterThan").value;
+      const lessThan =
+        document.querySelector<HTMLInputElement>("#filterLessThan").value;
       let customFilter = "";
       if (greaterThan) customFilter = "<>" + greaterThan;
       if (!greaterThan && lessThan) customFilter = lessThan + "<>";
@@ -813,9 +809,8 @@ export function SimpleTable({
                 <input
                   type="checkbox"
                   onChange={(e) => {
-                    const rows: NodeListOf<HTMLInputElement> = document.querySelectorAll(
-                      "#rowsSelector input"
-                    );
+                    const rows: NodeListOf<HTMLInputElement> =
+                      document.querySelectorAll("#rowsSelector input");
                     rows.forEach((row) => {
                       row.checked = e.target.checked;
                     });
@@ -984,9 +979,8 @@ export function SimpleTable({
                         <Tr
                           key={`r${i}`}
                           onClick={() => {
-                            const firstKey = Object.keys(originalData)[
-                              rowIdentifier
-                            ];
+                            const firstKey =
+                              Object.keys(originalData)[rowIdentifier];
                             const dataKeys = Object.keys(data);
                             const firstKeyIndex = dataKeys.findIndex(
                               (x) => x === firstKey
@@ -1076,9 +1070,8 @@ function TableHead({
   onColumnFilterChange,
   setModalData,
 }: ITableHeadProps) {
-  const [localColumnFilters, setLocalColumnFilters] = React.useState(
-    columnFilters
-  );
+  const [localColumnFilters, setLocalColumnFilters] =
+    React.useState(columnFilters);
 
   React.useEffect(() => {
     setLocalColumnFilters(columnFilters);

@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { css } from "@emotion/core";
-import styled from '@emotion/styled';
+import * as React from "react";
+import { css } from "@emotion/react";
+import styled from "@emotion/styled";
 
 // HorizontalList is a component that takes an array of arbitrary react nodes,
 // and places them on a single row horizontally.
@@ -16,7 +16,7 @@ interface IListProps {
 
 const List = styled.ul<IListProps>`
   display: flex;
-  justify-content: ${props => props.alignRight ? 'flex-end' : 'flex-start'};
+  justify-content: ${(props) => (props.alignRight ? "flex-end" : "flex-start")};
   list-style-type: none;
   margin: 1rem 0;
   padding: 0;
@@ -26,15 +26,17 @@ const List = styled.ul<IListProps>`
   &:last-child {
     margin-bottom: 0;
   }
-  ${props => props.responsiveBreakpoint && css`
-    @media (max-width: ${props.responsiveBreakpoint}px) {
-      flex-direction: column;
-    }
-  `}
+  ${(props) =>
+    props.responsiveBreakpoint &&
+    css`
+      @media (max-width: ${props.responsiveBreakpoint}px) {
+        flex-direction: column;
+      }
+    `}
 `;
 
 const Item = styled.li`
-  margin: 0 .8rem;
+  margin: 0 0.8rem;
   &:first-child {
     margin-left: 0;
   }
@@ -43,16 +45,18 @@ const Item = styled.li`
   }
 `;
 
-export const HorizontalList = ({ alignRight, children, responsiveBreakpoint }: IProps & IListProps) => {
+export const HorizontalList = ({
+  alignRight,
+  children,
+  responsiveBreakpoint,
+}: IProps & IListProps) => {
   const childrenArray = Array.isArray(children) ? children : [children];
 
   return (
     <List alignRight={alignRight} responsiveBreakpoint={responsiveBreakpoint}>
       {childrenArray.map((child, i) => (
-        <Item key={i}>
-          {child}
-        </Item>
+        <Item key={i}>{child}</Item>
       ))}
     </List>
-  )
+  );
 };
